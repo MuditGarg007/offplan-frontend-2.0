@@ -270,8 +270,19 @@ body {
     pointer-events: auto !important;
   }
 
+  .recs-container-wrapper.is-desktop-docked .recs-overlay-panel {
+    transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.32, 0.72, 0, 1) !important;
+  }
+
   .recs-container-wrapper.is-desktop-docked:not(.is-visible) .recs-overlay-panel {
-    display: none !important;
+    opacity: 0 !important;
+    transform: translateX(24px) !important;
+    pointer-events: none !important;
+  }
+
+  .recs-container-wrapper.is-desktop-docked.is-visible .recs-overlay-panel {
+    opacity: 1 !important;
+    transform: translateX(0) !important;
   }
 
   .is-desktop-docked .chat-overlay-backdrop,

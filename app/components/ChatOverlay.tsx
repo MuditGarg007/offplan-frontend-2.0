@@ -241,20 +241,23 @@ export default function ChatOverlay({ isOpen, onClose, initialMessage, onOpenRec
                 <button
                   onClick={onOpenRecs}
                   style={{
-                    display: "inline-block",
-                    fontSize: "13px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    fontSize: "12px",
                     fontWeight: 600,
-                    color: "#C9A84C",
-                    backgroundColor: "transparent",
+                    color: "#ffffff",
+                    backgroundColor: "#C9A84C",
                     border: "none",
-                    padding: 0,
+                    padding: "5px 12px",
+                    borderRadius: "6px",
                     cursor: "pointer",
-                    textDecoration: "none",
                     marginTop: "6px",
-                    textAlign: "left",
+                    alignSelf: "flex-start",
+                    letterSpacing: "0.01em",
                   }}
                 >
-                  Get personalized recommendations →
+                  Get Personalized Recommendations →
                 </button>
                 <div style={{ display: "flex", gap: "4px", paddingTop: "4px" }}>
                   {[

@@ -73,7 +73,7 @@ export default function Home() {
             </div>
           </div>
         </aside>
-        
+
         <div className="article-column">
           <ArticleHeader />
           <KeyMetrics />
