@@ -64,24 +64,21 @@ export default function Home() {
           <PersonalisedRecommendations onOpenRecs={() => setIsRecsOpen(true)} />
           <ArticleActions />
         </div>
-
-        <aside className="content-rail" />
       </main>
 
       <AiBar onOpenAi={handleOpenAi} />
 
-      {/* Overlays at root for mobile compatibility, docked via CSS on desktop */}
-      <div className={`chat-container-wrapper ${isDesktop ? "is-desktop-docked" : ""} ${isAiOpen || isDesktop ? "is-visible" : ""}`}>
-        <ChatOverlay 
-          isOpen={isAiOpen} 
-          onClose={() => setIsAiOpen(false)} 
-          initialMessage={aiMessage} 
+      <div className={`chat-container-wrapper ${isAiOpen ? "is-visible" : ""}`}>
+        <ChatOverlay
+          isOpen={isAiOpen}
+          onClose={() => setIsAiOpen(false)}
+          initialMessage={aiMessage}
           onOpenRecs={() => setIsRecsOpen(true)}
-          isForcedOpen={isDesktop}
+          isDesktop={isDesktop}
         />
       </div>
 
-      <div className={`recs-container-wrapper ${isDesktop ? "is-desktop-docked" : ""} ${isRecsOpen ? "is-visible" : ""}`}>
+      <div className={`recs-container-wrapper ${isRecsOpen ? "is-visible" : ""}`}>
         <RecommendationsOverlay
           isOpen={isRecsOpen}
           onClose={() => setIsRecsOpen(false)}

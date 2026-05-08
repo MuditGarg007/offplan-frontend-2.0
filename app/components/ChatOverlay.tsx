@@ -13,7 +13,8 @@ interface ChatOverlayProps {
   onClose: () => void;
   initialMessage: string;
   onOpenRecs: () => void;
-  isForcedOpen?: boolean; // New prop for desktop
+  isForcedOpen?: boolean;
+  isDesktop?: boolean;
 }
 
 const MOCK_AI_RESPONSE = `The expansion of Al Maktoum International Airport is expected to significantly increase property values in Dubai South over the long term. Based on similar infrastructure-led growth patterns in Dubai:
@@ -26,7 +27,7 @@ const MOCK_AI_RESPONSE = `The expansion of Al Maktoum International Airport is e
 
 Sources: See section 1 and 2 of this article.`;
 
-export default function ChatOverlay({ isOpen, onClose, initialMessage, onOpenRecs, isForcedOpen }: ChatOverlayProps) {
+export default function ChatOverlay({ isOpen, onClose, initialMessage, onOpenRecs, isForcedOpen, isDesktop }: ChatOverlayProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [followUp, setFollowUp] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
@@ -122,10 +123,11 @@ export default function ChatOverlay({ isOpen, onClose, initialMessage, onOpenRec
         style={{
           position: "fixed",
           bottom: 0,
-          left: 0,
-          right: 0,
+          left: isDesktop ? "calc(50% - 440px)" : 0,
+          right: isDesktop ? "auto" : 0,
+          width: isDesktop ? "880px" : "auto",
           zIndex: 201,
-          height: "82vh",
+          height: isDesktop ? "88vh" : "82vh",
           backgroundColor: "#ffffff",
           borderTopLeftRadius: "20px",
           borderTopRightRadius: "20px",
@@ -139,14 +141,14 @@ export default function ChatOverlay({ isOpen, onClose, initialMessage, onOpenRec
           overflow: "hidden",
         }}
       >
-        {/* Drag handle — touch target */}
+        {/* Drag handle — touch target, hidden on desktop */}
         <div
           onTouchStart={handleDragStart}
           onTouchMove={handleDragMove}
           onTouchEnd={handleDragEnd}
           className="chat-drag-handle"
           style={{
-            display: "flex",
+            display: isDesktop ? "none" : "flex",
             justifyContent: "center",
             alignItems: "center",
             paddingTop: "10px",
@@ -171,7 +173,7 @@ export default function ChatOverlay({ isOpen, onClose, initialMessage, onOpenRec
             display: "flex",
             alignItems: "center",
             gap: "8px",
-            padding: "4px 16px 8px",
+            padding: isDesktop ? "24px 32px 8px" : "4px 16px 8px",
           }}
         >
           <Star size={16} strokeWidth={1.8} color="#C9A84C" fill="#C9A84C" style={{ flexShrink: 0 }} />
@@ -196,12 +198,12 @@ export default function ChatOverlay({ isOpen, onClose, initialMessage, onOpenRec
         </div>
 
         {/* Subtitle */}
-        <div style={{ padding: "0 16px 10px" }}>
+        <div style={{ padding: isDesktop ? "0 32px 10px" : "0 16px 10px" }}>
           <span style={{ fontSize: "12px", color: "#888888" }}>About: Why Invest in Dubai South in 2026</span>
         </div>
 
         {/* Divider */}
-        <div style={{ height: "1px", backgroundColor: "#EBEBEB", margin: "0 16px" }} />
+        <div style={{ height: "1px", backgroundColor: "#EBEBEB", margin: isDesktop ? "0 32px" : "0 16px" }} />
 
         {/* Messages */}
         <div
@@ -210,7 +212,7 @@ export default function ChatOverlay({ isOpen, onClose, initialMessage, onOpenRec
             flex: 1,
             overflowY: "auto",
             overscrollBehavior: "contain",
-            padding: "16px 16px 8px",
+            padding: isDesktop ? "16px 32px 8px" : "16px 16px 8px",
             display: "flex",
             flexDirection: "column",
             gap: "16px",
@@ -289,7 +291,7 @@ export default function ChatOverlay({ isOpen, onClose, initialMessage, onOpenRec
         </div>
 
         {/* Follow-up input */}
-        <div style={{ padding: "12px 14px", backgroundColor: "#ffffff" }}>
+        <div style={{ padding: isDesktop ? "12px 32px" : "12px 14px", backgroundColor: "#ffffff" }}>
           <div
             style={{
               display: "flex",
