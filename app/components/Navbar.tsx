@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useRef, useState } from "react";
 import {
   Search,
@@ -10,6 +12,7 @@ import {
   Scale,
 } from "lucide-react";
 import SearchOverlay from "./SearchOverlay";
+import { useAuth } from "@/components/auth-provider";
 
 const navItems = [
   { icon: ChartNoAxesColumnIncreasing, label: "Market" },
@@ -20,6 +23,8 @@ const navItems = [
 ];
 
 export default function Navbar({ onOpenAi }: { onOpenAi: () => void }) {
+  const router = useRouter();
+  const { isAuthenticated, logout } = useAuth();
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const headerRef = useRef<HTMLElement>(null);
@@ -29,6 +34,11 @@ export default function Navbar({ onOpenAi }: { onOpenAi: () => void }) {
     setSearchOpen(false);
     setSearchQuery("");
   }, []);
+
+  const handleLogout = useCallback(() => {
+    logout();
+    router.push("/");
+  }, [logout, router]);
 
   const navbarHeight = headerRef.current?.offsetHeight ?? 100;
 
@@ -60,14 +70,30 @@ export default function Navbar({ onOpenAi }: { onOpenAi: () => void }) {
           }}
         >
           <div className="navbar-left-section" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <div className="logo-container" style={{ position: "absolute", left: "50%", transform: "translateX(-50%)" }}>
+            <div className="mobile-auth-btns">
+              {isAuthenticated ? (
+                <button
+                  onClick={handleLogout}
+                  className="mobile-logout-btn"
+                  style={{ color: "#000" }}
+                >
+                  Logout
+                </button>
+              ) : (
+                <>
+                  <Link href="/login" className="mobile-login-btn">Login</Link>
+                  <Link href="/signup" className="mobile-signup-btn">SignUp</Link>
+                </>
+              )}
+            </div>
+            <Link href="/" className="logo-container" style={{ position: "absolute", left: "50%", transform: "translateX(-50%)" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/offplan-logo.png"
                 alt="Offplan logo"
                 style={{ height: "26px", width: "auto", display: "block" }}
               />
-            </div>
+            </Link>
 
           </div>
 
@@ -87,6 +113,22 @@ export default function Navbar({ onOpenAi }: { onOpenAi: () => void }) {
           </div>
 
           <div className="navbar-right-section" style={{ display: "flex", alignItems: "center" }}>
+            <div className="desktop-auth-btns">
+              {isAuthenticated ? (
+                <button
+                  onClick={handleLogout}
+                  className="logout-btn"
+                  style={{ color: "#000" }}
+                >
+                  Logout
+                </button>
+              ) : (
+                <>
+                  <Link href="/login" className="login-btn">Login</Link>
+                  <Link href="/signup" className="signup-btn">SignUp</Link>
+                </>
+              )}
+            </div>
             <button
               aria-label="Open search"
               onClick={toggleSearch}

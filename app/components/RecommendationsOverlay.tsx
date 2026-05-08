@@ -177,7 +177,7 @@ export default function RecommendationsOverlay({ isOpen, onClose }: Recommendati
           right: 0,
           bottom: 0,
           width: "100%",
-          maxWidth: "100vw",
+          maxWidth: "min(100%, 20vw)",
           backgroundColor: "#ffffff",
           zIndex: 301,
           transform: isOpen ? "translateX(0)" : "translateX(100%)",

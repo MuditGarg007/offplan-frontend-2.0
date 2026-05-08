@@ -209,6 +209,78 @@ body {
   }
 }
 
+/* Auth Buttons */
+.auth-btns {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.login-btn {
+  font-size: 14px;
+  font-weight: 500;
+  color: #4a4a4a;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.login-btn:hover {
+  background-color: #f5f5f5;
+  color: #1a1a1a;
+}
+
+.signup-btn {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  background-color: #C9A84C;
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.signup-btn:hover {
+  background-color: #b39440;
+}
+
+.mobile-auth-btns {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.mobile-login-btn {
+  font-size: 13px;
+  font-weight: 500;
+  color: #4a4a4a;
+  padding: 4px 8px;
+}
+
+.mobile-signup-btn {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+  padding: 4px 10px;
+  background-color: #C9A84C;
+  border-radius: 6px;
+}
+
+@media (min-width: 1024px) {
+  .mobile-auth-btns {
+    display: none !important;
+  }
+  
+  .desktop-auth-btns {
+    display: flex !important;
+    margin-right: 8px;
+  }
+}
+
+.desktop-auth-btns {
+  display: none;
+}
+
 /* Default hidden states */
 .desktop-nav-menu,
 .navbar-center-section,

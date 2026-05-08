@@ -1,6 +1,6 @@
 "use client";
 
-import { SendHorizonal } from "lucide-react";
+import { SendHorizonal, ChevronUp } from "lucide-react";
 import { useState } from "react";
 
 export default function AiBar({ onOpenAi }: { onOpenAi: (msg: string) => void }) {
@@ -35,6 +35,25 @@ export default function AiBar({ onOpenAi }: { onOpenAi: (msg: string) => void })
         overflow: "hidden",
       }}
     >
+      <button
+        aria-label="Expand chat"
+        onClick={() => onOpenAi("")}
+        style={{
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          padding: 0,
+          width: "28px",
+          height: "28px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "#999",
+          flexShrink: 0,
+        }}
+      >
+        <ChevronUp size={20} strokeWidth={2} />
+      </button>
       <input
         type="text"
         value={inputValue}
