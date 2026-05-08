@@ -46,6 +46,7 @@ function CustomDropdown({ label, value, options, onChange, required }: CustomDro
       <div style={{ position: "relative" }}>
         <button
           onClick={() => setIsOpen(!isOpen)}
+          type="button"
           style={{
             width: "100%",
             padding: "12px 16px",
@@ -141,17 +142,6 @@ export default function RecommendationsOverlay({ isOpen, onClose }: Recommendati
   const countryRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
-    }
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [isOpen]);
-
-  useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (countryRef.current && !countryRef.current.contains(event.target as Node)) {
         setIsCountryCodeOpen(false);
@@ -204,11 +194,16 @@ export default function RecommendationsOverlay({ isOpen, onClose }: Recommendati
             alignItems: "center",
             padding: "16px",
             borderBottom: "1px solid #f0f0f0",
+            flexShrink: 0,
           }}
         >
           <button
-            onClick={onClose}
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
             aria-label="Close"
+            type="button"
             style={{
               backgroundColor: "transparent",
               border: "none",
@@ -218,6 +213,8 @@ export default function RecommendationsOverlay({ isOpen, onClose }: Recommendati
               alignItems: "center",
               justifyContent: "center",
               color: "#1a1a1a",
+              position: "relative",
+              zIndex: 10,
             }}
           >
             <X size={24} strokeWidth={2} />
@@ -228,7 +225,7 @@ export default function RecommendationsOverlay({ isOpen, onClose }: Recommendati
         </div>
 
         {/* Content Area */}
-        <div style={{ flex: 1, padding: "24px", overflow: "hidden" }}>
+        <div style={{ flex: 1, padding: "24px", overflowY: "auto" }}>
           <h1
             style={{
               fontSize: "20px",
@@ -296,6 +293,7 @@ export default function RecommendationsOverlay({ isOpen, onClose }: Recommendati
                 <div ref={countryRef} style={{ position: "relative" }}>
                   <button
                     onClick={() => setIsCountryCodeOpen(!isCountryCodeOpen)}
+                    type="button"
                     style={{
                       padding: "10px 14px",
                       backgroundColor: "#F9FAFB",
@@ -374,10 +372,8 @@ export default function RecommendationsOverlay({ isOpen, onClose }: Recommendati
 
             <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "8px" }}>
               <button
-                onClick={() => {
-                  /* Handle submission */
-                  onClose();
-                }}
+                onClick={() => onClose()}
+                type="button"
                 style={{
                   padding: "16px",
                   backgroundColor: "#C9A84C",
@@ -389,21 +385,18 @@ export default function RecommendationsOverlay({ isOpen, onClose }: Recommendati
                   cursor: "pointer",
                   transition: "transform 0.1s, opacity 0.2s",
                   boxShadow: "0 4px 12px rgba(201, 168, 76, 0.2)",
-                }}
-                onMouseDown={(e) => {
-                  e.currentTarget.style.transform = "scale(0.98)";
-                  e.currentTarget.style.opacity = "0.9";
-                }}
-                onMouseUp={(e) => {
-                  e.currentTarget.style.transform = "scale(1)";
-                  e.currentTarget.style.opacity = "1";
+                  width: "100%",
                 }}
               >
                 Get Recommendations
               </button>
 
               <button
-                onClick={onClose}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onClose();
+                }}
+                type="button"
                 style={{
                   background: "none",
                   border: "none",
@@ -411,10 +404,12 @@ export default function RecommendationsOverlay({ isOpen, onClose }: Recommendati
                   fontSize: "14px",
                   fontWeight: 500,
                   cursor: "pointer",
-                  padding: "8px",
+                  padding: "12px",
                   textAlign: "center",
                   width: "100%",
                   opacity: 0.7,
+                  display: "block",
+                  margin: "0 auto",
                 }}
               >
                 Not now

@@ -253,12 +253,25 @@ body {
     width: 380px !important;
     height: auto !important;
     z-index: 50 !important;
-    pointer-events: none;
   }
 
-  .chat-container-wrapper.is-desktop-docked.is-visible,
+  .chat-container-wrapper.is-desktop-docked {
+    pointer-events: auto !important;
+    border-left: 1px solid #E5E7EB !important;
+  }
+
+  .recs-container-wrapper.is-desktop-docked {
+    pointer-events: none;
+    z-index: 60 !important;
+    border-left: 1px solid #E5E7EB !important;
+  }
+
   .recs-container-wrapper.is-desktop-docked.is-visible {
-    pointer-events: auto;
+    pointer-events: auto !important;
+  }
+
+  .recs-container-wrapper.is-desktop-docked:not(.is-visible) .recs-overlay-panel {
+    display: none !important;
   }
 
   .is-desktop-docked .chat-overlay-backdrop,
@@ -270,6 +283,7 @@ body {
   .is-desktop-docked .recs-overlay-panel {
     position: absolute !important;
     top: 0 !important;
+    padding-top: 16px !important;
     left: 0 !important;
     right: 0 !important;
     bottom: 0 !important;
@@ -280,10 +294,6 @@ body {
     box-shadow: none !important;
     border: none !important;
     display: flex !important;
-  }
-
-  .recs-container-wrapper.is-desktop-docked {
-    z-index: 60 !important;
   }
 
   .is-desktop-docked .chat-drag-handle,
