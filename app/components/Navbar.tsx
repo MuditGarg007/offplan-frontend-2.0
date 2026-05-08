@@ -2,7 +2,6 @@
 
 import { useCallback, useRef, useState } from "react";
 import {
-  Menu,
   Search,
   ChartNoAxesColumnIncreasing,
   MapPin,
@@ -11,7 +10,6 @@ import {
   Scale,
 } from "lucide-react";
 import SearchOverlay from "./SearchOverlay";
-import Sidebar from "./Sidebar";
 
 const navItems = [
   { icon: ChartNoAxesColumnIncreasing, label: "Market" },
@@ -24,7 +22,6 @@ const navItems = [
 export default function Navbar({ onOpenAi }: { onOpenAi: () => void }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [menuOpen, setMenuOpen] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
 
   const toggleSearch = useCallback(() => setSearchOpen((prev) => !prev), []);
@@ -32,9 +29,6 @@ export default function Navbar({ onOpenAi }: { onOpenAi: () => void }) {
     setSearchOpen(false);
     setSearchQuery("");
   }, []);
-
-  const toggleMenu = useCallback(() => setMenuOpen((prev) => !prev), []);
-  const closeMenu = useCallback(() => setMenuOpen(false), []);
 
   const navbarHeight = headerRef.current?.offsetHeight ?? 100;
 
@@ -66,14 +60,6 @@ export default function Navbar({ onOpenAi }: { onOpenAi: () => void }) {
           }}
         >
           <div className="navbar-left-section" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <button
-              aria-label="Open menu"
-              onClick={toggleMenu}
-              style={{ background: "none", border: "none", cursor: "pointer", padding: "8px", display: "flex", alignItems: "center", color: "#1a1a1a" }}
-            >
-              <Menu size={22} strokeWidth={1.8} />
-            </button>
-
             <div className="logo-container" style={{ position: "absolute", left: "50%", transform: "translateX(-50%)" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -154,8 +140,6 @@ export default function Navbar({ onOpenAi }: { onOpenAi: () => void }) {
           ))}
         </nav>
       </header>
-
-      <Sidebar isOpen={menuOpen} onClose={closeMenu} onOpenAi={onOpenAi} />
 
       <SearchOverlay
         isOpen={searchOpen}

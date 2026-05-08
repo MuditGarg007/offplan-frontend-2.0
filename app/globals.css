@@ -150,7 +150,7 @@ body {
 
   .main-content {
     display: grid !important;
-    grid-template-columns: 280px minmax(0, 1fr) 380px !important;
+    grid-template-columns: minmax(0, 1fr) 380px !important;
     min-height: calc(100vh - 72px) !important;
     padding: 0 !important;
     gap: 0 !important;
@@ -159,65 +159,7 @@ body {
     overflow: visible !important;
   }
 
-  /* Column 1: Navigation */
-  .toc-rail {
-    display: block !important;
-    border-right: 1px solid #eee;
-    background: #ffffff;
-    height: calc(100vh - 72px);
-    position: sticky;
-    top: 72px;
-    overflow-y: auto;
-  }
-
-  .toc-content {
-    padding: 24px 16px;
-  }
-
-  .toc-heading {
-    font-size: 12px;
-    font-weight: 700;
-    text-transform: uppercase;
-    color: #999;
-    letter-spacing: 0.05em;
-    margin-bottom: 16px;
-    padding-left: 12px;
-  }
-
-  .toc-nav {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .toc-link {
-    display: flex;
-    align-items: center;
-    padding: 10px 12px;
-    border-radius: 8px;
-    color: #4a4a4a;
-    font-size: 14px;
-    font-weight: 500;
-    transition: all 0.2s ease;
-    text-align: left;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    width: 100%;
-  }
-
-  .toc-link:hover {
-    background: #f5f5f5;
-    color: #000;
-  }
-
-  .toc-link.active {
-    background: #f0f0f0;
-    color: #000;
-    font-weight: 600;
-  }
-
-  /* Column 2: Main Content */
+  /* Column 1: Main Content */
   .article-column {
     padding: 40px 80px !important;
     background: #ffffff;
@@ -363,7 +305,6 @@ body {
 .navbar-center-section,
 .desktop-search-btn,
 .search-header-desktop,
-.toc-rail,
 .content-rail {
   display: none;
 }

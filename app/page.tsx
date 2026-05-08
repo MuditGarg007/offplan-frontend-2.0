@@ -46,34 +46,6 @@ export default function Home() {
     <div style={{ minHeight: "100vh", backgroundColor: "#ffffff", display: "flex", flexDirection: "column" }}>
       <Navbar onOpenAi={() => handleOpenAi()} />
       <main className="main-content" style={{ flex: 1, position: "relative" }}>
-        <aside className="toc-rail">
-          <div className="toc-content">
-            <div className="toc-section">
-              <h3 className="toc-heading">Menu</h3>
-              <nav className="toc-nav">
-                <button className="toc-link active">
-                  <span>Market</span>
-                </button>
-                <button className="toc-link">
-                  <span>Areas</span>
-                </button>
-                <button className="toc-link">
-                  <span>Developers</span>
-                </button>
-                <button className="toc-link">
-                  <span>Guides</span>
-                </button>
-                <button className="toc-link">
-                  <span>Compare</span>
-                </button>
-                <button className="toc-link">
-                  <span>About Offplan</span>
-                </button>
-              </nav>
-            </div>
-          </div>
-        </aside>
-
         <div className="article-column">
           <ArticleHeader />
           <KeyMetrics />
