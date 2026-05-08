@@ -1,12 +1,14 @@
 "use client";
 
-import { X, Star, ThumbsUp, ThumbsDown, Copy, Share2, SendHorizonal } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { X, Star, ThumbsUp, ThumbsDown, Copy, Share2, SendHorizonal, Square } from "lucide-react";
+import { useEffect, useRef, useState, useCallback } from "react";
+import ReactMarkdown from "react-markdown";
+import { useAskStream } from "@/hooks/useAskStream";
+import { AskResponse } from "@/lib/api/askStream";
 
-interface Message {
-  role: "user" | "ai";
-  text: string;
-}
+type ChatMessage =
+  | { role: "user"; content: string }
+  | { role: "assistant"; data: AskResponse | string }
 
 interface ChatOverlayProps {
   isOpen: boolean;
@@ -17,64 +19,282 @@ interface ChatOverlayProps {
   isDesktop?: boolean;
 }
 
-const MOCK_AI_RESPONSE = `The expansion of Al Maktoum International Airport is expected to significantly increase property values in Dubai South over the long term. Based on similar infrastructure-led growth patterns in Dubai:
+function stripCitations(text: string): string {
+  return text.replace(/\[Source\s+\d+\]/gi, "").trim();
+}
 
-• Areas near major transport hubs typically see 15–25% price appreciation within 3–5 years.
+function MarkdownText({ text }: { text: string }) {
+  return (
+    <div style={{ fontSize: "14px", color: "#1a1a1a", lineHeight: 1.65 }}>
+      <ReactMarkdown>{stripCitations(text)}</ReactMarkdown>
+    </div>
+  );
+}
 
-• Rental demand increases due to logistics, aviation, and commercial activity.
+function AssistantMessage({ data, onOpenRecs }: { data: AskResponse | string; onOpenRecs: () => void }) {
+  const [copied, setCopied] = useState(false);
 
-• Early-entry areas benefit the most before large-scale completion.
+  const handleCopy = () => {
+    const text = typeof data === "string"
+      ? data
+      : [data.title, data.summary ?? data.response].filter(Boolean).join("\n\n");
+    navigator.clipboard.writeText(text).catch(() => {});
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
 
-Sources: See section 1 and 2 of this article.`;
+  const content = typeof data === "string" ? (
+    <MarkdownText text={data} />
+  ) : (
+    <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+      {data.title && (
+        <div style={{ fontSize: "16px", fontWeight: 700, color: "#1a1a1a" }}>
+          {data.title}
+        </div>
+      )}
+
+      {(data.summary ?? data.response) && (
+        <MarkdownText text={data.summary ?? data.response ?? ""} />
+      )}
+
+      {data.sections?.map((section, idx) => (
+        <div key={idx} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+          {section.heading && (
+            <div style={{ fontSize: "14px", fontWeight: 600, color: "#1a1a1a" }}>
+              {section.heading}
+            </div>
+          )}
+          {section.body && <MarkdownText text={section.body} />}
+          {section.bullets?.length > 0 && (
+            <ul style={{ margin: 0, paddingLeft: "18px", display: "flex", flexDirection: "column", gap: "4px" }}>
+              {section.bullets.map((b, i) => (
+                <li key={i} style={{ fontSize: "14px", color: "#1a1a1a", lineHeight: 1.5 }}>
+                  {stripCitations(b)}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      ))}
+
+      {data.key_points?.length > 0 && (
+        <ul style={{ margin: 0, paddingLeft: "18px", display: "flex", flexDirection: "column", gap: "4px" }}>
+          {data.key_points.map((pt, i) => (
+            <li key={i} style={{ fontSize: "14px", color: "#1a1a1a", lineHeight: 1.5 }}>
+              {stripCitations(pt)}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {data.faq?.length > 0 && (
+        <div style={{ borderTop: "1px solid #EBEBEB", paddingTop: "10px", display: "flex", flexDirection: "column", gap: "8px" }}>
+          {data.faq.map((item, i) => (
+            <details key={i}>
+              <summary style={{ fontSize: "14px", fontWeight: 600, color: "#1a1a1a", cursor: "pointer", listStyle: "none" }}>
+                {item.question}
+              </summary>
+              <div style={{ paddingLeft: "12px", paddingTop: "4px", fontSize: "14px", color: "#444", lineHeight: 1.6 }}>
+                {item.answer}
+              </div>
+            </details>
+          ))}
+        </div>
+      )}
+
+      {data.lead_trigger && data.suggested_cta && (
+        <button
+          onClick={onOpenRecs}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "4px",
+            fontSize: "12px",
+            fontWeight: 600,
+            color: "#ffffff",
+            backgroundColor: "#C9A84C",
+            border: "none",
+            padding: "5px 12px",
+            borderRadius: "6px",
+            cursor: "pointer",
+            alignSelf: "flex-start",
+            letterSpacing: "0.01em",
+          }}
+        >
+          {data.suggested_cta} →
+        </button>
+      )}
+
+      {!data.lead_trigger && (
+        <button
+          onClick={onOpenRecs}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "4px",
+            fontSize: "12px",
+            fontWeight: 600,
+            color: "#ffffff",
+            backgroundColor: "#C9A84C",
+            border: "none",
+            padding: "5px 12px",
+            borderRadius: "6px",
+            cursor: "pointer",
+            alignSelf: "flex-start",
+            letterSpacing: "0.01em",
+          }}
+        >
+          Get Personalised Recommendations →
+        </button>
+      )}
+    </div>
+  );
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+      {content}
+      <div style={{ display: "flex", gap: "4px", paddingTop: "4px" }}>
+        {[
+          { icon: <ThumbsUp size={16} strokeWidth={1.8} />, label: "Like", onClick: () => {} },
+          { icon: <ThumbsDown size={16} strokeWidth={1.8} />, label: "Dislike", onClick: () => {} },
+          {
+            icon: <Copy size={16} strokeWidth={1.8} />,
+            label: copied ? "Copied!" : "Copy",
+            onClick: handleCopy,
+          },
+          { icon: <Share2 size={16} strokeWidth={1.8} />, label: "Share", onClick: () => {} },
+        ].map(({ icon, label, onClick }) => (
+          <button
+            key={label}
+            aria-label={label}
+            onClick={onClick}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: "6px 10px",
+              color: "#999999",
+              display: "flex",
+              alignItems: "center",
+            }}
+          >
+            {icon}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TypingIndicator({ status }: { status: string }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: "#888" }}>
+      <span style={{ display: "inline-flex", gap: "3px" }}>
+        {[0, 150, 300].map((delay) => (
+          <span
+            key={delay}
+            style={{
+              width: "6px",
+              height: "6px",
+              borderRadius: "50%",
+              backgroundColor: "#888",
+              display: "inline-block",
+              animation: "bounce 1s infinite",
+              animationDelay: `${delay}ms`,
+            }}
+          />
+        ))}
+      </span>
+      <span>{status || "Thinking…"}</span>
+    </div>
+  );
+}
 
 export default function ChatOverlay({ isOpen, onClose, initialMessage, onOpenRecs, isForcedOpen, isDesktop }: ChatOverlayProps) {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [followUp, setFollowUp] = useState("");
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
+  const resultHandledRef = useRef(false);
+  const processedInitialMsgRef = useRef("");
 
   // Drag-to-dismiss state
   const [dragY, setDragY] = useState(0);
   const isDragging = useRef(false);
   const dragStartY = useRef(0);
 
-  // Effectively open if state is open OR if we force it open on desktop
   const effectiveOpen = isOpen || isForcedOpen;
 
-  useEffect(() => {
-    if (effectiveOpen && messages.length === 0) {
-      setMessages([
-        { role: "ai", text: "Hello! I'm your Dubai South assistant. Ask me anything about this article or the local property market." },
-      ]);
-    }
-  }, [effectiveOpen, messages.length]);
+  const { status, streaming, result, error, partial, ask, cancel, reset } = useAskStream();
 
+  const buildHistory = useCallback((msgs: ChatMessage[]) =>
+    msgs.map((m) =>
+      m.role === "user"
+        ? { role: "user" as const, content: m.content }
+        : {
+            role: "assistant" as const,
+            content: typeof m.data === "string"
+              ? m.data
+              : (m.data.summary ?? m.data.response ?? ""),
+          },
+    ), []);
+
+  const sendMessage = useCallback(async (query: string, currentMessages: ChatMessage[]) => {
+    if (!query.trim() || streaming) return;
+    resultHandledRef.current = false;
+    setMessages((prev) => [...prev, { role: "user", content: query }]);
+    await ask(query, "en", buildHistory(currentMessages));
+  }, [streaming, ask, buildHistory]);
+
+  // Greeting on first open (no initial message)
   useEffect(() => {
-    if (isOpen && initialMessage) {
-      setMessages((prev) => [
-        ...prev,
-        { role: "user", text: initialMessage },
-        { role: "ai", text: MOCK_AI_RESPONSE },
-      ]);
+    if (effectiveOpen && messages.length === 0 && !initialMessage) {
+      setMessages([{
+        role: "assistant",
+        data: "Hello! I'm your Dubai South assistant. Ask me anything about this article or the local property market.",
+      }]);
     }
+  }, [effectiveOpen]);
+
+  // Handle initialMessage
+  useEffect(() => {
+    if (!isOpen || !initialMessage || initialMessage === processedInitialMsgRef.current) return;
+    processedInitialMsgRef.current = initialMessage;
+    setMessages([]);
+    reset();
+    resultHandledRef.current = false;
+    sendMessage(initialMessage, []);
   }, [isOpen, initialMessage]);
 
+  // Commit result to messages
+  useEffect(() => {
+    if (result && !resultHandledRef.current) {
+      resultHandledRef.current = true;
+      setMessages((prev) => [...prev, { role: "assistant", data: result }]);
+    }
+  }, [result]);
+
+  // Commit error to messages
+  useEffect(() => {
+    if (error && !streaming) {
+      setMessages((prev) => [...prev, { role: "assistant", data: error }]);
+    }
+  }, [error, streaming]);
+
+  // Scroll to bottom on new content
   useEffect(() => {
     if (effectiveOpen && containerRef.current) {
-      containerRef.current.scrollTo({
-        top: containerRef.current.scrollHeight,
-        behavior: "smooth",
-      });
+      containerRef.current.scrollTo({ top: containerRef.current.scrollHeight, behavior: "smooth" });
     }
-  }, [messages, effectiveOpen]);
+  }, [messages, partial, effectiveOpen]);
 
-  const handleSendFollowUp = () => {
-    if (!followUp.trim()) return;
-    setMessages((prev) => [
-      ...prev,
-      { role: "user", text: followUp.trim() },
-      { role: "ai", text: MOCK_AI_RESPONSE },
-    ]);
-    setFollowUp("");
+  // Cleanup on unmount
+  useEffect(() => () => cancel(), [cancel]);
+
+  const handleSend = () => {
+    const query = input.trim();
+    if (!query) return;
+    setInput("");
+    sendMessage(query, messages);
   };
 
   const handleDragStart = (e: React.TouchEvent) => {
@@ -105,7 +325,6 @@ export default function ChatOverlay({ isOpen, onClose, initialMessage, onOpenRec
       {/* Backdrop */}
       <div
         onClick={onClose}
-        className="chat-overlay-backdrop"
         style={{
           position: "fixed",
           inset: 0,
@@ -119,7 +338,6 @@ export default function ChatOverlay({ isOpen, onClose, initialMessage, onOpenRec
 
       {/* Overlay Panel */}
       <div
-        className="chat-overlay-panel"
         style={{
           position: "fixed",
           bottom: 0,
@@ -133,20 +351,17 @@ export default function ChatOverlay({ isOpen, onClose, initialMessage, onOpenRec
           borderTopRightRadius: "20px",
           display: "flex",
           flexDirection: "column",
-          transform: effectiveOpen
-            ? `translateY(${dragY}px)`
-            : "translateY(100%)",
+          transform: effectiveOpen ? `translateY(${dragY}px)` : "translateY(100%)",
           transition: isAnimating ? "transform 0.38s cubic-bezier(0.32, 0.72, 0, 1)" : "none",
           boxShadow: "0 -8px 40px rgba(0,0,0,0.18)",
           overflow: "hidden",
         }}
       >
-        {/* Drag handle — touch target, hidden on desktop */}
+        {/* Drag handle */}
         <div
           onTouchStart={handleDragStart}
           onTouchMove={handleDragMove}
           onTouchEnd={handleDragEnd}
-          className="chat-drag-handle"
           style={{
             display: isDesktop ? "none" : "flex",
             justifyContent: "center",
@@ -157,41 +372,17 @@ export default function ChatOverlay({ isOpen, onClose, initialMessage, onOpenRec
             touchAction: "none",
           }}
         >
-          <div
-            style={{
-              width: "36px",
-              height: "4px",
-              borderRadius: "2px",
-              backgroundColor: "#D0D0D0",
-            }}
-          />
+          <div style={{ width: "36px", height: "4px", borderRadius: "2px", backgroundColor: "#D0D0D0" }} />
         </div>
 
         {/* Header */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            padding: isDesktop ? "24px 32px 8px" : "4px 16px 8px",
-          }}
-        >
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: isDesktop ? "24px 32px 8px" : "4px 16px 8px" }}>
           <Star size={16} strokeWidth={1.8} color="#C9A84C" fill="#C9A84C" style={{ flexShrink: 0 }} />
           <span style={{ fontSize: "15px", fontWeight: 700, color: "#1a1a1a", flex: 1 }}>Ask Offplan AI</span>
           <button
             onClick={onClose}
             aria-label="Close"
-            className="chat-close-btn"
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              padding: "4px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#666",
-            }}
+            style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", display: "flex", alignItems: "center", justifyContent: "center", color: "#666" }}
           >
             <X size={20} strokeWidth={2} />
           </button>
@@ -221,95 +412,53 @@ export default function ChatOverlay({ isOpen, onClose, initialMessage, onOpenRec
           {messages.map((msg, i) =>
             msg.role === "user" ? (
               <div key={i} style={{ display: "flex", justifyContent: "flex-end" }}>
-                <div
-                  style={{
-                    backgroundColor: "#1a1a1a",
-                    color: "#ffffff",
-                    borderRadius: "18px 18px 4px 18px",
-                    padding: "11px 15px",
-                    maxWidth: "80%",
-                    fontSize: "14px",
-                    lineHeight: 1.5,
-                  }}
-                >
-                  {msg.text}
+                <div style={{
+                  backgroundColor: "#1a1a1a",
+                  color: "#ffffff",
+                  borderRadius: "18px 18px 4px 18px",
+                  padding: "11px 15px",
+                  maxWidth: "80%",
+                  fontSize: "14px",
+                  lineHeight: 1.5,
+                }}>
+                  {msg.content}
                 </div>
               </div>
             ) : (
-              <div key={i} style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                <div style={{ fontSize: "14px", color: "#1a1a1a", lineHeight: 1.65, whiteSpace: "pre-line" }}>
-                  {msg.text}
-                </div>
-                <button
-                  onClick={onOpenRecs}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "4px",
-                    fontSize: "12px",
-                    fontWeight: 600,
-                    color: "#ffffff",
-                    backgroundColor: "#C9A84C",
-                    border: "none",
-                    padding: "5px 12px",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                    marginTop: "6px",
-                    alignSelf: "flex-start",
-                    letterSpacing: "0.01em",
-                  }}
-                >
-                  Get Personalized Recommendations →
-                </button>
-                <div style={{ display: "flex", gap: "4px", paddingTop: "4px" }}>
-                  {[
-                    { icon: <ThumbsUp size={16} strokeWidth={1.8} />, label: "Like" },
-                    { icon: <ThumbsDown size={16} strokeWidth={1.8} />, label: "Dislike" },
-                    { icon: <Copy size={16} strokeWidth={1.8} />, label: "Copy" },
-                    { icon: <Share2 size={16} strokeWidth={1.8} />, label: "Share" },
-                  ].map(({ icon, label }) => (
-                    <button
-                      key={label}
-                      aria-label={label}
-                      style={{
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                        padding: "6px 10px",
-                        color: "#999999",
-                        display: "flex",
-                        alignItems: "center",
-                      }}
-                    >
-                      {icon}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <AssistantMessage key={i} data={msg.data} onOpenRecs={onOpenRecs} />
             )
+          )}
+
+          {/* Streaming states */}
+          {streaming && !partial && (
+            <TypingIndicator status={status} />
+          )}
+          {streaming && partial && (
+            <div style={{ fontSize: "14px", color: "#1a1a1a", lineHeight: 1.65, whiteSpace: "pre-wrap" }}>
+              {partial}
+            </div>
           )}
         </div>
 
-        {/* Follow-up input */}
+        {/* Input */}
         <div style={{ padding: isDesktop ? "12px 32px" : "12px 14px", backgroundColor: "#ffffff" }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-              border: "1px solid rgba(0,0,0,0.1)",
-              borderRadius: "999px",
-              padding: "8px 8px 8px 16px",
-              backgroundColor: "#fafafa",
-              overflow: "hidden",
-            }}
-          >
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            border: "1px solid rgba(0,0,0,0.1)",
+            borderRadius: "999px",
+            padding: "8px 8px 8px 16px",
+            backgroundColor: "#fafafa",
+            overflow: "hidden",
+          }}>
             <input
               type="text"
-              value={followUp}
-              onChange={(e) => setFollowUp(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSendFollowUp()}
-              placeholder="Ask a follow-up..."
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && !streaming && handleSend()}
+              placeholder={streaming ? "Waiting for response…" : "Ask a follow-up…"}
+              disabled={streaming}
               style={{
                 flex: 1,
                 border: "none",
@@ -323,31 +472,64 @@ export default function ChatOverlay({ isOpen, onClose, initialMessage, onOpenRec
                 borderRadius: 0,
                 padding: 0,
                 margin: 0,
+                opacity: streaming ? 0.5 : 1,
               }}
             />
-            <button
-              aria-label="Send follow-up"
-              onClick={handleSendFollowUp}
-              style={{
-                background: "#000",
-                border: "none",
-                cursor: "pointer",
-                padding: 0,
-                width: "34px",
-                height: "34px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#fff",
-                flexShrink: 0,
-                borderRadius: "999px",
-              }}
-            >
-              <SendHorizonal size={17} strokeWidth={2} />
-            </button>
+            {streaming ? (
+              <button
+                aria-label="Stop"
+                onClick={cancel}
+                style={{
+                  background: "#000",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: 0,
+                  width: "34px",
+                  height: "34px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#fff",
+                  flexShrink: 0,
+                  borderRadius: "999px",
+                }}
+              >
+                <Square size={14} strokeWidth={2} fill="#fff" />
+              </button>
+            ) : (
+              <button
+                aria-label="Send"
+                onClick={handleSend}
+                disabled={!input.trim()}
+                style={{
+                  background: input.trim() ? "#000" : "#ccc",
+                  border: "none",
+                  cursor: input.trim() ? "pointer" : "default",
+                  padding: 0,
+                  width: "34px",
+                  height: "34px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#fff",
+                  flexShrink: 0,
+                  borderRadius: "999px",
+                  transition: "background 0.15s",
+                }}
+              >
+                <SendHorizonal size={17} strokeWidth={2} />
+              </button>
+            )}
           </div>
         </div>
       </div>
+
+      <style>{`
+        @keyframes bounce {
+          0%, 80%, 100% { transform: translateY(0); }
+          40% { transform: translateY(-4px); }
+        }
+      `}</style>
     </>
   );
 }
