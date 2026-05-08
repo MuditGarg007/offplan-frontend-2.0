@@ -166,6 +166,7 @@ export default function RecommendationsOverlay({ isOpen, onClose }: Recommendati
       {/* Backdrop */}
       <div
         onClick={onClose}
+        className="recs-overlay-backdrop"
         style={{
           position: "fixed",
           inset: 0,
@@ -179,6 +180,7 @@ export default function RecommendationsOverlay({ isOpen, onClose }: Recommendati
 
       {/* Slide-in Panel */}
       <div
+        className="recs-overlay-panel"
         style={{
           position: "fixed",
           top: 0,

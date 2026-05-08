@@ -7,7 +7,7 @@ const suggestions = [
   "What are the risks of investing in Dubai South?",
 ];
 
-export default function AiSuggestions() {
+export default function AiSuggestions({ onOpenAi }: { onOpenAi: (msg: string) => void }) {
   return (
     <section style={{ padding: "0 20px 24px" }}>
       <div
@@ -38,6 +38,7 @@ export default function AiSuggestions() {
           {suggestions.map((text, i) => (
             <div
               key={i}
+              onClick={() => onOpenAi(text)}
               style={{
                 display: "flex",
                 alignItems: "center",

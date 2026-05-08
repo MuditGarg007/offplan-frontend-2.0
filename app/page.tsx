@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "./components/Navbar";
 import ArticleHeader from "./components/ArticleHeader";
 import KeyMetrics from "./components/KeyMetrics";
@@ -26,22 +26,60 @@ export default function Home() {
   const [isAiOpen, setIsAiOpen] = useState(false);
   const [aiMessage, setAiMessage] = useState("");
   const [isRecsOpen, setIsRecsOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const checkDesktop = () => {
+      setIsDesktop(window.innerWidth >= 1024);
+    };
+    checkDesktop();
+    window.addEventListener("resize", checkDesktop);
+    return () => window.removeEventListener("resize", checkDesktop);
+  }, []);
 
   const handleOpenAi = (message: string = "") => {
     setAiMessage(message);
     setIsAiOpen(true);
   };
+
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "#ffffff" }}>
+    <div style={{ minHeight: "100vh", backgroundColor: "#ffffff", display: "flex", flexDirection: "column" }}>
       <Navbar onOpenAi={() => handleOpenAi()} />
-      <main className="main-content" style={{ paddingBottom: "80px" }}>
-        <aside className="toc-rail" aria-hidden="true" />
+      <main className="main-content" style={{ flex: 1, position: "relative" }}>
+        <aside className="toc-rail">
+          <div className="toc-content">
+            <div className="toc-section">
+              <h3 className="toc-heading">Menu</h3>
+              <nav className="toc-nav">
+                <button className="toc-link active">
+                  <span>Market</span>
+                </button>
+                <button className="toc-link">
+                  <span>Areas</span>
+                </button>
+                <button className="toc-link">
+                  <span>Developers</span>
+                </button>
+                <button className="toc-link">
+                  <span>Guides</span>
+                </button>
+                <button className="toc-link">
+                  <span>Compare</span>
+                </button>
+                <button className="toc-link">
+                  <span>About Offplan</span>
+                </button>
+              </nav>
+            </div>
+          </div>
+        </aside>
+        
         <div className="article-column">
           <ArticleHeader />
           <KeyMetrics />
           <VideoEmbed />
           <ExecutiveSummary />
-          <AiSuggestions />
+          <AiSuggestions onOpenAi={handleOpenAi} />
           <ArticleIndex />
           <ArticleSection1 />
           <ArticleSection2 />
@@ -54,19 +92,29 @@ export default function Home() {
           <PersonalisedRecommendations onOpenRecs={() => setIsRecsOpen(true)} />
           <ArticleActions />
         </div>
-        <aside className="content-rail" aria-hidden="true" />
+
+        <aside className="content-rail" />
       </main>
+
       <AiBar onOpenAi={handleOpenAi} />
-      <ChatOverlay 
-        isOpen={isAiOpen} 
-        onClose={() => setIsAiOpen(false)} 
-        initialMessage={aiMessage} 
-        onOpenRecs={() => setIsRecsOpen(true)}
-      />
-      <RecommendationsOverlay
-        isOpen={isRecsOpen}
-        onClose={() => setIsRecsOpen(false)}
-      />
+
+      {/* Overlays at root for mobile compatibility, docked via CSS on desktop */}
+      <div className={`chat-container-wrapper ${isDesktop ? "is-desktop-docked" : ""} ${isAiOpen || isDesktop ? "is-visible" : ""}`}>
+        <ChatOverlay 
+          isOpen={isAiOpen} 
+          onClose={() => setIsAiOpen(false)} 
+          initialMessage={aiMessage} 
+          onOpenRecs={() => setIsRecsOpen(true)}
+          isForcedOpen={isDesktop}
+        />
+      </div>
+
+      <div className={`recs-container-wrapper ${isDesktop ? "is-desktop-docked" : ""} ${isRecsOpen ? "is-visible" : ""}`}>
+        <RecommendationsOverlay
+          isOpen={isRecsOpen}
+          onClose={() => setIsRecsOpen(false)}
+        />
+      </div>
     </div>
   );
 }

@@ -13,6 +13,7 @@ interface ChatOverlayProps {
   onClose: () => void;
   initialMessage: string;
   onOpenRecs: () => void;
+  isForcedOpen?: boolean; // New prop for desktop
 }
 
 const MOCK_AI_RESPONSE = `The expansion of Al Maktoum International Airport is expected to significantly increase property values in Dubai South over the long term. Based on similar infrastructure-led growth patterns in Dubai:
@@ -25,34 +26,45 @@ const MOCK_AI_RESPONSE = `The expansion of Al Maktoum International Airport is e
 
 Sources: See section 1 and 2 of this article.`;
 
-export default function ChatOverlay({ isOpen, onClose, initialMessage, onOpenRecs }: ChatOverlayProps) {
+export default function ChatOverlay({ isOpen, onClose, initialMessage, onOpenRecs, isForcedOpen }: ChatOverlayProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [followUp, setFollowUp] = useState("");
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Drag-to-dismiss state
   const [dragY, setDragY] = useState(0);
   const isDragging = useRef(false);
   const dragStartY = useRef(0);
 
+  // Effectively open if state is open OR if we force it open on desktop
+  const effectiveOpen = isOpen || isForcedOpen;
+
+  useEffect(() => {
+    if (effectiveOpen && messages.length === 0) {
+      setMessages([
+        { role: "ai", text: "Hello! I'm your Dubai South assistant. Ask me anything about this article or the local property market." },
+      ]);
+    }
+  }, [effectiveOpen, messages.length]);
+
   useEffect(() => {
     if (isOpen && initialMessage) {
-      setMessages([
+      setMessages((prev) => [
+        ...prev,
         { role: "user", text: initialMessage },
         { role: "ai", text: MOCK_AI_RESPONSE },
       ]);
     }
-    if (!isOpen) {
-      setMessages([]);
-      setDragY(0);
-    }
   }, [isOpen, initialMessage]);
 
   useEffect(() => {
-    if (isOpen) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (effectiveOpen && containerRef.current) {
+      containerRef.current.scrollTo({
+        top: containerRef.current.scrollHeight,
+        behavior: "smooth",
+      });
     }
-  }, [messages, isOpen]);
+  }, [messages, effectiveOpen]);
 
   const handleSendFollowUp = () => {
     if (!followUp.trim()) return;
@@ -92,6 +104,7 @@ export default function ChatOverlay({ isOpen, onClose, initialMessage, onOpenRec
       {/* Backdrop */}
       <div
         onClick={onClose}
+        className="chat-overlay-backdrop"
         style={{
           position: "fixed",
           inset: 0,
@@ -105,6 +118,7 @@ export default function ChatOverlay({ isOpen, onClose, initialMessage, onOpenRec
 
       {/* Overlay Panel */}
       <div
+        className="chat-overlay-panel"
         style={{
           position: "fixed",
           bottom: 0,
@@ -117,7 +131,7 @@ export default function ChatOverlay({ isOpen, onClose, initialMessage, onOpenRec
           borderTopRightRadius: "20px",
           display: "flex",
           flexDirection: "column",
-          transform: isOpen
+          transform: effectiveOpen
             ? `translateY(${dragY}px)`
             : "translateY(100%)",
           transition: isAnimating ? "transform 0.38s cubic-bezier(0.32, 0.72, 0, 1)" : "none",
@@ -130,6 +144,7 @@ export default function ChatOverlay({ isOpen, onClose, initialMessage, onOpenRec
           onTouchStart={handleDragStart}
           onTouchMove={handleDragMove}
           onTouchEnd={handleDragEnd}
+          className="chat-drag-handle"
           style={{
             display: "flex",
             justifyContent: "center",
@@ -164,6 +179,7 @@ export default function ChatOverlay({ isOpen, onClose, initialMessage, onOpenRec
           <button
             onClick={onClose}
             aria-label="Close"
+            className="chat-close-btn"
             style={{
               background: "none",
               border: "none",
@@ -189,9 +205,11 @@ export default function ChatOverlay({ isOpen, onClose, initialMessage, onOpenRec
 
         {/* Messages */}
         <div
+          ref={containerRef}
           style={{
             flex: 1,
             overflowY: "auto",
+            overscrollBehavior: "contain",
             padding: "16px 16px 8px",
             display: "flex",
             flexDirection: "column",
@@ -265,7 +283,6 @@ export default function ChatOverlay({ isOpen, onClose, initialMessage, onOpenRec
               </div>
             )
           )}
-          <div ref={messagesEndRef} />
         </div>
 
         {/* Follow-up input */}
