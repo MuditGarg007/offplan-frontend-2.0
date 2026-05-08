@@ -102,45 +102,45 @@ body {
     font-size: 14px !important;
   }
 
-  .navbar-search-container {
+  .navbar-center-section {
     display: flex !important;
     justify-content: center;
     align-items: center;
-    width: 600px !important;
-    margin: 0 auto;
-    flex-shrink: 0;
   }
 
-  .navbar-search-form {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    background: #f8f9fa;
-    border: 1px solid #e5e7eb;
-    border-radius: 40px;
-    padding: 0 16px;
-    height: 44px;
-    transition: all 0.2s ease;
-  }
-
-  .navbar-search-form:focus-within {
-    background: #ffffff;
-    border-color: #000000;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-  }
-
-  .navbar-search-input {
-    flex: 1;
-    background: none;
-    border: none;
-    outline: none;
-    padding: 8px 12px;
-    font-size: 14px;
-    color: #1a1a1a;
+  .desktop-search-btn {
+    display: flex !important;
+    align-items: center !important;
   }
 
   .mobile-search-btn {
     display: none !important;
+  }
+
+  /* Desktop Search Overlay — compact dropdown */
+  .search-overlay-desktop {
+    left: auto !important;
+    right: 24px !important;
+    bottom: auto !important;
+    width: 480px !important;
+    max-height: 620px !important;
+    border-radius: 16px !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.14) !important;
+    border: 1px solid #e5e7eb !important;
+    overflow: hidden !important;
+  }
+
+  .search-results-body {
+    max-height: calc(620px - 72px) !important;
+    overflow-y: auto !important;
+  }
+
+  .search-header-mobile {
+    display: none !important;
+  }
+
+  .search-header-desktop {
+    display: flex !important;
   }
 
   /* Desktop App Layout - 3 Columns with Sticky Sidebars */
@@ -360,7 +360,9 @@ body {
 
 /* Default hidden states */
 .desktop-nav-menu,
-.navbar-search-container,
+.navbar-center-section,
+.desktop-search-btn,
+.search-header-desktop,
 .toc-rail,
 .content-rail {
   display: none;

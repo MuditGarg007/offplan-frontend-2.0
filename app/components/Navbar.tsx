@@ -36,10 +36,6 @@ export default function Navbar({ onOpenAi }: { onOpenAi: () => void }) {
   const toggleMenu = useCallback(() => setMenuOpen((prev) => !prev), []);
   const closeMenu = useCallback(() => setMenuOpen(false), []);
 
-  const handleDesktopSearchFocus = () => {
-    setSearchOpen(true);
-  };
-
   const navbarHeight = headerRef.current?.offsetHeight ?? 100;
 
   return (
@@ -86,34 +82,11 @@ export default function Navbar({ onOpenAi }: { onOpenAi: () => void }) {
                 style={{ height: "26px", width: "auto", display: "block" }}
               />
             </div>
+
           </div>
 
-          {/* Desktop Search Bar (Centered) */}
-          <div className="navbar-search-container">
-            <form 
-              className="navbar-search-form"
-              onSubmit={(e) => e.preventDefault()}
-            >
-              <Search size={18} color="#666" />
-              <input 
-                type="text"
-                className="navbar-search-input"
-                placeholder="Search properties, areas, guides..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onFocus={handleDesktopSearchFocus}
-              />
-              <button 
-                type="button"
-                style={{ background: "none", border: "none", cursor: "pointer", color: "#666" }}
-              >
-                <Search size={18} strokeWidth={2} />
-              </button>
-            </form>
-          </div>
-
-          <div className="navbar-right-section" style={{ display: "flex", alignItems: "center" }}>
-            {/* Desktop Nav Items */}
+          {/* Desktop Nav Items (Centered) */}
+          <div className="navbar-center-section">
             <nav className="desktop-nav-menu">
               {navItems.map(({ icon: Icon, label }) => (
                 <button
@@ -125,12 +98,22 @@ export default function Navbar({ onOpenAi }: { onOpenAi: () => void }) {
                 </button>
               ))}
             </nav>
+          </div>
 
+          <div className="navbar-right-section" style={{ display: "flex", alignItems: "center" }}>
             <button
               aria-label="Open search"
               onClick={toggleSearch}
               className="mobile-search-btn"
               style={{ background: "none", border: "none", cursor: "pointer", padding: "8px", display: "flex", alignItems: "center", color: "#1a1a1a" }}
+            >
+              <Search size={20} strokeWidth={1.8} />
+            </button>
+            <button
+              aria-label="Open search"
+              onClick={toggleSearch}
+              className="desktop-search-btn"
+              style={{ background: "none", border: "none", cursor: "pointer", padding: "8px", display: "none", alignItems: "center", color: "#1a1a1a" }}
             >
               <Search size={20} strokeWidth={1.8} />
             </button>

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Mic, Search, ChevronDown, ChevronRight } from "lucide-react";
+import { ArrowLeft, Mic, Search, ChevronDown, ChevronRight, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 interface SearchOverlayProps {
@@ -99,6 +99,74 @@ export default function SearchOverlay({
         flexDirection: "column",
       }}
     >
+      {/* Header bar (Desktop Only) */}
+      <div
+        className="search-header-desktop"
+        style={{
+          display: "none",
+          alignItems: "center",
+          gap: "12px",
+          padding: "12px 16px",
+          borderBottom: "1px solid #f0f0f0",
+        }}
+      >
+        <form
+          onSubmit={handleSearch}
+          style={{
+            flex: 1,
+            display: "flex",
+            alignItems: "center",
+            backgroundColor: "#f8f9fa",
+            border: "1px solid #e5e7eb",
+            borderRadius: "24px",
+            padding: "0 16px",
+            height: "44px",
+            gap: "10px",
+          }}
+        >
+          <button
+            type="submit"
+            style={{ background: "none", border: "none", padding: 0, display: "flex", alignItems: "center", cursor: "pointer" }}
+          >
+            <Search size={18} strokeWidth={1.5} color="#666666" style={{ flexShrink: 0 }} />
+          </button>
+          <input
+            type="search"
+            placeholder="Search properties, areas, guides…"
+            autoComplete="off"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{
+              flex: 1,
+              background: "none",
+              border: "none",
+              outline: "none",
+              fontSize: "14px",
+              color: "#1a1a1a",
+              fontFamily: "inherit",
+            }}
+          />
+          <Mic size={18} strokeWidth={1.5} color="#666666" style={{ flexShrink: 0, cursor: "pointer" }} />
+        </form>
+        <button
+          onClick={onClose}
+          aria-label="Close search"
+          style={{
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            padding: "6px",
+            display: "flex",
+            alignItems: "center",
+            color: "#1a1a1a",
+            borderRadius: "8px",
+            flexShrink: 0,
+          }}
+        >
+          <X size={20} strokeWidth={1.8} />
+        </button>
+      </div>
+
       {/* Header bar (Mobile Only) */}
       <div
         className="search-header-mobile"
