@@ -4,11 +4,11 @@ import { X, Star, ThumbsUp, ThumbsDown, Copy, Share2, SendHorizonal, Square } fr
 import { useEffect, useRef, useState, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
 import { useAskStream } from "@/hooks/useAskStream";
-import { AskResponse } from "@/lib/api/askStream";
+import { AskResponse, StructuredChunk } from "@/lib/api/askStream";
 
 type ChatMessage =
   | { role: "user"; content: string }
-  | { role: "assistant"; data: AskResponse | string }
+  | { role: "assistant"; chunks: StructuredChunk[]; result: AskResponse | null };
 
 interface ChatOverlayProps {
   isOpen: boolean;
@@ -18,6 +18,8 @@ interface ChatOverlayProps {
   isForcedOpen?: boolean;
   isDesktop?: boolean;
 }
+
+// ─── Renderers ───────────────────────────────────────────────────────────────
 
 function stripCitations(text: string): string {
   return text.replace(/\[Source\s+\d+\]/gi, "").trim();
@@ -31,157 +33,122 @@ function MarkdownText({ text }: { text: string }) {
   );
 }
 
-function AssistantMessage({ data, onOpenRecs }: { data: AskResponse | string; onOpenRecs: () => void }) {
+// Groups consecutive bullet chunks into <ul> blocks; renders other chunks inline.
+function StreamingContent({ chunks }: { chunks: StructuredChunk[] }) {
+  const nodes: React.ReactNode[] = [];
+  let bulletRun: string[] = [];
+  let key = 0;
+
+  const flushBullets = () => {
+    if (bulletRun.length === 0) return;
+    nodes.push(
+      <ul key={key++} style={{ margin: "4px 0", paddingLeft: "18px", display: "flex", flexDirection: "column", gap: "3px" }}>
+        {bulletRun.map((b, i) => (
+          <li key={i} style={{ fontSize: "14px", color: "#1a1a1a", lineHeight: 1.5 }}>{stripCitations(b)}</li>
+        ))}
+      </ul>
+    );
+    bulletRun = [];
+  };
+
+  for (const chunk of chunks) {
+    if (chunk.type === "bullet") {
+      bulletRun.push(chunk.content);
+      continue;
+    }
+    flushBullets();
+
+    if (chunk.type === "title") {
+      nodes.push(
+        <div key={key++} style={{ fontSize: "16px", fontWeight: 700, color: "#1a1a1a", marginBottom: "4px" }}>
+          {chunk.content}
+        </div>
+      );
+    } else if (chunk.type === "heading") {
+      nodes.push(
+        <div key={key++} style={{ fontSize: chunk.metadata?.faq ? "13px" : "14px", fontWeight: 600, color: "#1a1a1a", marginTop: "8px" }}>
+          {chunk.content}
+        </div>
+      );
+    } else if (chunk.type === "text") {
+      nodes.push(<MarkdownText key={key++} text={chunk.content} />);
+    }
+  }
+  flushBullets();
+
+  return <>{nodes}</>;
+}
+
+function AssistantBlock({
+  chunks,
+  result,
+  showActions,
+  onOpenRecs,
+}: {
+  chunks: StructuredChunk[];
+  result: AskResponse | null;
+  showActions: boolean;
+  onOpenRecs: () => void;
+}) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
-    const text = typeof data === "string"
-      ? data
-      : [data.title, data.summary ?? data.response].filter(Boolean).join("\n\n");
+    const text = chunks.map((c) => ("content" in c ? c.content : "")).filter(Boolean).join("\n");
     navigator.clipboard.writeText(text).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
 
-  const content = typeof data === "string" ? (
-    <MarkdownText text={data} />
-  ) : (
-    <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-      {data.title && (
-        <div style={{ fontSize: "16px", fontWeight: 700, color: "#1a1a1a" }}>
-          {data.title}
-        </div>
-      )}
-
-      {(data.summary ?? data.response) && (
-        <MarkdownText text={data.summary ?? data.response ?? ""} />
-      )}
-
-      {data.sections?.map((section, idx) => (
-        <div key={idx} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-          {section.heading && (
-            <div style={{ fontSize: "14px", fontWeight: 600, color: "#1a1a1a" }}>
-              {section.heading}
-            </div>
-          )}
-          {section.body && <MarkdownText text={section.body} />}
-          {section.bullets?.length > 0 && (
-            <ul style={{ margin: 0, paddingLeft: "18px", display: "flex", flexDirection: "column", gap: "4px" }}>
-              {section.bullets.map((b, i) => (
-                <li key={i} style={{ fontSize: "14px", color: "#1a1a1a", lineHeight: 1.5 }}>
-                  {stripCitations(b)}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      ))}
-
-      {data.key_points?.length > 0 && (
-        <ul style={{ margin: 0, paddingLeft: "18px", display: "flex", flexDirection: "column", gap: "4px" }}>
-          {data.key_points.map((pt, i) => (
-            <li key={i} style={{ fontSize: "14px", color: "#1a1a1a", lineHeight: 1.5 }}>
-              {stripCitations(pt)}
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {data.faq?.length > 0 && (
-        <div style={{ borderTop: "1px solid #EBEBEB", paddingTop: "10px", display: "flex", flexDirection: "column", gap: "8px" }}>
-          {data.faq.map((item, i) => (
-            <details key={i}>
-              <summary style={{ fontSize: "14px", fontWeight: 600, color: "#1a1a1a", cursor: "pointer", listStyle: "none" }}>
-                {item.question}
-              </summary>
-              <div style={{ paddingLeft: "12px", paddingTop: "4px", fontSize: "14px", color: "#444", lineHeight: 1.6 }}>
-                {item.answer}
-              </div>
-            </details>
-          ))}
-        </div>
-      )}
-
-      {data.lead_trigger && data.suggested_cta && (
-        <button
-          onClick={onOpenRecs}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "4px",
-            fontSize: "12px",
-            fontWeight: 600,
-            color: "#ffffff",
-            backgroundColor: "#C9A84C",
-            border: "none",
-            padding: "5px 12px",
-            borderRadius: "6px",
-            cursor: "pointer",
-            alignSelf: "flex-start",
-            letterSpacing: "0.01em",
-          }}
-        >
-          {data.suggested_cta} →
-        </button>
-      )}
-
-      {!data.lead_trigger && (
-        <button
-          onClick={onOpenRecs}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "4px",
-            fontSize: "12px",
-            fontWeight: 600,
-            color: "#ffffff",
-            backgroundColor: "#C9A84C",
-            border: "none",
-            padding: "5px 12px",
-            borderRadius: "6px",
-            cursor: "pointer",
-            alignSelf: "flex-start",
-            letterSpacing: "0.01em",
-          }}
-        >
-          Get Personalised Recommendations →
-        </button>
-      )}
-    </div>
-  );
+  const cta = result && result.lead_trigger && result.suggested_cta
+    ? `${result.suggested_cta} →`
+    : "Get Personalised Recommendations →";
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-      {content}
-      <div style={{ display: "flex", gap: "4px", paddingTop: "4px" }}>
-        {[
-          { icon: <ThumbsUp size={16} strokeWidth={1.8} />, label: "Like", onClick: () => {} },
-          { icon: <ThumbsDown size={16} strokeWidth={1.8} />, label: "Dislike", onClick: () => {} },
-          {
-            icon: <Copy size={16} strokeWidth={1.8} />,
-            label: copied ? "Copied!" : "Copy",
-            onClick: handleCopy,
-          },
-          { icon: <Share2 size={16} strokeWidth={1.8} />, label: "Share", onClick: () => {} },
-        ].map(({ icon, label, onClick }) => (
-          <button
-            key={label}
-            aria-label={label}
-            onClick={onClick}
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              padding: "6px 10px",
-              color: "#999999",
-              display: "flex",
-              alignItems: "center",
-            }}
-          >
-            {icon}
-          </button>
-        ))}
-      </div>
+      <StreamingContent chunks={chunks} />
+
+      {result && (
+        <button
+          onClick={onOpenRecs}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "4px",
+            fontSize: "12px",
+            fontWeight: 600,
+            color: "#ffffff",
+            backgroundColor: "#C9A84C",
+            border: "none",
+            padding: "5px 12px",
+            borderRadius: "6px",
+            cursor: "pointer",
+            alignSelf: "flex-start",
+            letterSpacing: "0.01em",
+          }}
+        >
+          {cta}
+        </button>
+      )}
+
+      {showActions && (
+        <div style={{ display: "flex", gap: "4px", paddingTop: "4px" }}>
+          {[
+            { icon: <ThumbsUp size={16} strokeWidth={1.8} />, label: "Like", onClick: () => {} },
+            { icon: <ThumbsDown size={16} strokeWidth={1.8} />, label: "Dislike", onClick: () => {} },
+            { icon: <Copy size={16} strokeWidth={1.8} />, label: copied ? "Copied!" : "Copy", onClick: handleCopy },
+            { icon: <Share2 size={16} strokeWidth={1.8} />, label: "Share", onClick: () => {} },
+          ].map(({ icon, label, onClick }) => (
+            <button
+              key={label}
+              aria-label={label}
+              onClick={onClick}
+              style={{ background: "none", border: "none", cursor: "pointer", padding: "6px 10px", color: "#999999", display: "flex", alignItems: "center" }}
+            >
+              {icon}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -194,11 +161,8 @@ function TypingIndicator({ status }: { status: string }) {
           <span
             key={delay}
             style={{
-              width: "6px",
-              height: "6px",
-              borderRadius: "50%",
-              backgroundColor: "#888",
-              display: "inline-block",
+              width: "6px", height: "6px", borderRadius: "50%",
+              backgroundColor: "#888", display: "inline-block",
               animation: "bounce 1s infinite",
               animationDelay: `${delay}ms`,
             }}
@@ -210,21 +174,28 @@ function TypingIndicator({ status }: { status: string }) {
   );
 }
 
+// ─── Main Component ───────────────────────────────────────────────────────────
+
+const GREETING_CHUNKS: StructuredChunk[] = [{
+  type: "text",
+  content: "Hello! I'm your Dubai South assistant. Ask me anything about this article or the local property market.",
+}];
+
 export default function ChatOverlay({ isOpen, onClose, initialMessage, onOpenRecs, isForcedOpen, isDesktop }: ChatOverlayProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
-  const resultHandledRef = useRef(false);
+  const committedRef = useRef(false);
+  const wasStreamingRef = useRef(false);
   const processedInitialMsgRef = useRef("");
 
-  // Drag-to-dismiss state
   const [dragY, setDragY] = useState(0);
   const isDragging = useRef(false);
   const dragStartY = useRef(0);
 
   const effectiveOpen = isOpen || isForcedOpen;
 
-  const { status, streaming, result, error, partial, ask, cancel, reset } = useAskStream();
+  const { status, streaming, result, error, chunks, ask, cancel, reset } = useAskStream();
 
   const buildHistory = useCallback((msgs: ChatMessage[]) =>
     msgs.map((m) =>
@@ -232,15 +203,16 @@ export default function ChatOverlay({ isOpen, onClose, initialMessage, onOpenRec
         ? { role: "user" as const, content: m.content }
         : {
             role: "assistant" as const,
-            content: typeof m.data === "string"
-              ? m.data
-              : (m.data.summary ?? m.data.response ?? ""),
+            content: m.chunks
+              .map((c) => ("content" in c ? c.content : ""))
+              .filter(Boolean)
+              .join(" "),
           },
     ), []);
 
   const sendMessage = useCallback(async (query: string, currentMessages: ChatMessage[]) => {
     if (!query.trim() || streaming) return;
-    resultHandledRef.current = false;
+    committedRef.current = false;
     setMessages((prev) => [...prev, { role: "user", content: query }]);
     await ask(query, "en", buildHistory(currentMessages));
   }, [streaming, ask, buildHistory]);
@@ -248,35 +220,40 @@ export default function ChatOverlay({ isOpen, onClose, initialMessage, onOpenRec
   // Greeting on first open (no initial message)
   useEffect(() => {
     if (effectiveOpen && messages.length === 0 && !initialMessage) {
-      setMessages([{
-        role: "assistant",
-        data: "Hello! I'm your Dubai South assistant. Ask me anything about this article or the local property market.",
-      }]);
+      setMessages([{ role: "assistant", chunks: GREETING_CHUNKS, result: null }]);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [effectiveOpen]);
 
-  // Handle initialMessage
+  // Handle initialMessage — each unique value fires once
   useEffect(() => {
     if (!isOpen || !initialMessage || initialMessage === processedInitialMsgRef.current) return;
     processedInitialMsgRef.current = initialMessage;
     setMessages([]);
     reset();
-    resultHandledRef.current = false;
+    committedRef.current = false;
     sendMessage(initialMessage, []);
-  }, [isOpen, initialMessage]);
+  }, [isOpen, initialMessage, sendMessage, reset]);
 
-  // Commit result to messages
+  // Commit final message when streaming transitions false → with content available.
   useEffect(() => {
-    if (result && !resultHandledRef.current) {
-      resultHandledRef.current = true;
-      setMessages((prev) => [...prev, { role: "assistant", data: result }]);
+    if (wasStreamingRef.current && !streaming && !committedRef.current) {
+      if (chunks.length > 0 || result) {
+        committedRef.current = true;
+        setMessages((prev) => [...prev, { role: "assistant", chunks, result }]);
+      }
     }
-  }, [result]);
+    wasStreamingRef.current = streaming;
+  }, [streaming, chunks, result]);
 
   // Commit error to messages
   useEffect(() => {
-    if (error && !streaming) {
-      setMessages((prev) => [...prev, { role: "assistant", data: error }]);
+    if (error && !streaming && !committedRef.current) {
+      committedRef.current = true;
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", chunks: [{ type: "text", content: error }], result: null },
+      ]);
     }
   }, [error, streaming]);
 
@@ -285,9 +262,8 @@ export default function ChatOverlay({ isOpen, onClose, initialMessage, onOpenRec
     if (effectiveOpen && containerRef.current) {
       containerRef.current.scrollTo({ top: containerRef.current.scrollHeight, behavior: "smooth" });
     }
-  }, [messages, partial, effectiveOpen]);
+  }, [messages, chunks, effectiveOpen]);
 
-  // Cleanup on unmount
   useEffect(() => () => cancel(), [cancel]);
 
   const handleSend = () => {
@@ -310,12 +286,8 @@ export default function ChatOverlay({ isOpen, onClose, initialMessage, onOpenRec
 
   const handleDragEnd = () => {
     isDragging.current = false;
-    if (dragY > 100) {
-      onClose();
-      setDragY(0);
-    } else {
-      setDragY(0);
-    }
+    if (dragY > 100) { onClose(); setDragY(0); }
+    else setDragY(0);
   };
 
   const isAnimating = !isDragging.current && dragY === 0;
@@ -326,31 +298,25 @@ export default function ChatOverlay({ isOpen, onClose, initialMessage, onOpenRec
       <div
         onClick={onClose}
         style={{
-          position: "fixed",
-          inset: 0,
-          backgroundColor: "rgba(0,0,0,0.4)",
-          zIndex: 200,
-          opacity: isOpen ? 1 : 0,
+          position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.4)",
+          zIndex: 200, opacity: isOpen ? 1 : 0,
           pointerEvents: isOpen ? "auto" : "none",
           transition: "opacity 0.35s ease",
         }}
       />
 
-      {/* Overlay Panel */}
+      {/* Panel */}
       <div
         style={{
-          position: "fixed",
-          bottom: 0,
+          position: "fixed", bottom: 0,
           left: isDesktop ? "calc(50% - 440px)" : 0,
           right: isDesktop ? "auto" : 0,
           width: isDesktop ? "880px" : "auto",
           zIndex: 201,
           height: isDesktop ? "88vh" : "82vh",
           backgroundColor: "#ffffff",
-          borderTopLeftRadius: "20px",
-          borderTopRightRadius: "20px",
-          display: "flex",
-          flexDirection: "column",
+          borderTopLeftRadius: "20px", borderTopRightRadius: "20px",
+          display: "flex", flexDirection: "column",
           transform: effectiveOpen ? `translateY(${dragY}px)` : "translateY(100%)",
           transition: isAnimating ? "transform 0.38s cubic-bezier(0.32, 0.72, 0, 1)" : "none",
           boxShadow: "0 -8px 40px rgba(0,0,0,0.18)",
@@ -364,12 +330,9 @@ export default function ChatOverlay({ isOpen, onClose, initialMessage, onOpenRec
           onTouchEnd={handleDragEnd}
           style={{
             display: isDesktop ? "none" : "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            paddingTop: "10px",
-            paddingBottom: "8px",
-            cursor: "grab",
-            touchAction: "none",
+            justifyContent: "center", alignItems: "center",
+            paddingTop: "10px", paddingBottom: "8px",
+            cursor: "grab", touchAction: "none",
           }}
         >
           <div style={{ width: "36px", height: "4px", borderRadius: "2px", backgroundColor: "#D0D0D0" }} />
@@ -393,64 +356,58 @@ export default function ChatOverlay({ isOpen, onClose, initialMessage, onOpenRec
           <span style={{ fontSize: "12px", color: "#888888" }}>About: Why Invest in Dubai South in 2026</span>
         </div>
 
-        {/* Divider */}
         <div style={{ height: "1px", backgroundColor: "#EBEBEB", margin: isDesktop ? "0 32px" : "0 16px" }} />
 
         {/* Messages */}
         <div
           ref={containerRef}
           style={{
-            flex: 1,
-            overflowY: "auto",
-            overscrollBehavior: "contain",
+            flex: 1, overflowY: "auto", overscrollBehavior: "contain",
             padding: isDesktop ? "16px 32px 8px" : "16px 16px 8px",
-            display: "flex",
-            flexDirection: "column",
-            gap: "16px",
+            display: "flex", flexDirection: "column", gap: "16px",
           }}
         >
           {messages.map((msg, i) =>
             msg.role === "user" ? (
               <div key={i} style={{ display: "flex", justifyContent: "flex-end" }}>
                 <div style={{
-                  backgroundColor: "#1a1a1a",
-                  color: "#ffffff",
+                  backgroundColor: "#1a1a1a", color: "#ffffff",
                   borderRadius: "18px 18px 4px 18px",
-                  padding: "11px 15px",
-                  maxWidth: "80%",
-                  fontSize: "14px",
-                  lineHeight: 1.5,
+                  padding: "11px 15px", maxWidth: "80%",
+                  fontSize: "14px", lineHeight: 1.5,
                 }}>
                   {msg.content}
                 </div>
               </div>
             ) : (
-              <AssistantMessage key={i} data={msg.data} onOpenRecs={onOpenRecs} />
+              <AssistantBlock
+                key={i}
+                chunks={msg.chunks}
+                result={msg.result}
+                showActions={msg.result !== null}
+                onOpenRecs={onOpenRecs}
+              />
             )
           )}
 
-          {/* Streaming states */}
-          {streaming && !partial && (
-            <TypingIndicator status={status} />
-          )}
-          {streaming && partial && (
-            <div style={{ fontSize: "14px", color: "#1a1a1a", lineHeight: 1.65, whiteSpace: "pre-wrap" }}>
-              {partial}
-            </div>
+          {/* Live streaming view */}
+          {streaming && chunks.length === 0 && <TypingIndicator status={status} />}
+          {streaming && chunks.length > 0 && (
+            <AssistantBlock
+              chunks={chunks}
+              result={null}
+              showActions={false}
+              onOpenRecs={onOpenRecs}
+            />
           )}
         </div>
 
         {/* Input */}
         <div style={{ padding: isDesktop ? "12px 32px" : "12px 14px", backgroundColor: "#ffffff" }}>
           <div style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "10px",
-            border: "1px solid rgba(0,0,0,0.1)",
-            borderRadius: "999px",
-            padding: "8px 8px 8px 16px",
-            backgroundColor: "#fafafa",
-            overflow: "hidden",
+            display: "flex", alignItems: "center", gap: "10px",
+            border: "1px solid rgba(0,0,0,0.1)", borderRadius: "999px",
+            padding: "8px 8px 8px 16px", backgroundColor: "#fafafa", overflow: "hidden",
           }}>
             <input
               type="text"
@@ -460,18 +417,10 @@ export default function ChatOverlay({ isOpen, onClose, initialMessage, onOpenRec
               placeholder={streaming ? "Waiting for response…" : "Ask a follow-up…"}
               disabled={streaming}
               style={{
-                flex: 1,
-                border: "none",
-                background: "transparent",
-                outline: "none",
-                fontSize: "14px",
-                color: "#1a1a1a",
-                fontFamily: "inherit",
-                appearance: "none",
-                WebkitAppearance: "none",
-                borderRadius: 0,
-                padding: 0,
-                margin: 0,
+                flex: 1, border: "none", background: "transparent", outline: "none",
+                fontSize: "14px", color: "#1a1a1a", fontFamily: "inherit",
+                appearance: "none", WebkitAppearance: "none",
+                borderRadius: 0, padding: 0, margin: 0,
                 opacity: streaming ? 0.5 : 1,
               }}
             />
@@ -480,18 +429,10 @@ export default function ChatOverlay({ isOpen, onClose, initialMessage, onOpenRec
                 aria-label="Stop"
                 onClick={cancel}
                 style={{
-                  background: "#000",
-                  border: "none",
-                  cursor: "pointer",
-                  padding: 0,
-                  width: "34px",
-                  height: "34px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#fff",
-                  flexShrink: 0,
-                  borderRadius: "999px",
+                  background: "#000", border: "none", cursor: "pointer",
+                  padding: 0, width: "34px", height: "34px",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  color: "#fff", flexShrink: 0, borderRadius: "999px",
                 }}
               >
                 <Square size={14} strokeWidth={2} fill="#fff" />
@@ -503,17 +444,10 @@ export default function ChatOverlay({ isOpen, onClose, initialMessage, onOpenRec
                 disabled={!input.trim()}
                 style={{
                   background: input.trim() ? "#000" : "#ccc",
-                  border: "none",
-                  cursor: input.trim() ? "pointer" : "default",
-                  padding: 0,
-                  width: "34px",
-                  height: "34px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#fff",
-                  flexShrink: 0,
-                  borderRadius: "999px",
+                  border: "none", cursor: input.trim() ? "pointer" : "default",
+                  padding: 0, width: "34px", height: "34px",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  color: "#fff", flexShrink: 0, borderRadius: "999px",
                   transition: "background 0.15s",
                 }}
               >

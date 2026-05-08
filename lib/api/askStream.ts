@@ -1,16 +1,14 @@
 import { API_BASE } from "@/lib/api/config"
 
 export interface Section {
-  heading: string | null
-  body: string | null
+  heading?: string
+  body?: string
   bullets: string[]
 }
 
 export interface AskResponse {
   title?: string
-  summary?: string
-  response?: string
-  sections?: Section[]
+  sections: Section[]
   key_points: string[]
   faq: { question: string; answer: string }[]
   sources: string[]
@@ -19,16 +17,26 @@ export interface AskResponse {
   lead_trigger: boolean
   suggested_cta: string
   page_available: boolean
-  page_slug: string | null
-  metadata: { cached: boolean; fallback?: boolean; pipeline_ms?: number; streamed?: boolean }
+  page_slug?: string
+  metadata?: Record<string, unknown>
 }
 
 export type AskStreamEvent =
-  | { type: "status"; message: string }
-  | { type: "token"; text: string }
-  | { type: "result"; data: AskResponse }
-  | { type: "error"; message: string }
+  | { type: "status";  message: string }
+  | { type: "token";   text: string }
+  | { type: "title";   content: string }
+  | { type: "heading"; content: string; metadata?: { faq?: boolean } }
+  | { type: "text";    content: string; metadata?: { faq?: boolean } }
+  | { type: "bullet";  content: string }
+  | { type: "result";  data: AskResponse }
+  | { type: "error";   message: string }
   | { type: "done" }
+
+export type StructuredChunk =
+  | { type: "title";   content: string }
+  | { type: "heading"; content: string; metadata?: { faq?: boolean } }
+  | { type: "text";    content: string; metadata?: { faq?: boolean } }
+  | { type: "bullet";  content: string }
 
 export async function* askStream(
   query: string,
@@ -42,7 +50,9 @@ export async function* askStream(
     body: JSON.stringify({
       query,
       language,
-      history: history.slice(-6).filter((m) => m.content.trim().length > 0),
+      history: history
+        .slice(-6)
+        .filter((m) => m.content.trim().length > 0),
     }),
     signal,
   })
@@ -68,13 +78,14 @@ export async function* askStream(
     buffer = lines.pop() ?? ""
 
     for (const line of lines) {
-      if (!line.startsWith("data: ")) continue
+      const trimmed = line.trim()
+      if (!trimmed) continue
       try {
-        const event = JSON.parse(line.slice(6)) as AskStreamEvent
+        const event = JSON.parse(trimmed) as AskStreamEvent
         yield event
         if (event.type === "done") return
       } catch {
-        // malformed SSE chunk — skip
+        // malformed JSONL line — skip
       }
     }
   }
