@@ -109,6 +109,13 @@ export default function Navbar({ onOpenAi }: { onOpenAi: () => void }) {
                   <span>{label}</span>
                 </button>
               ))}
+              <button
+                onClick={toggleSearch}
+                className="nav-item-desktop"
+              >
+                <Search size={18} strokeWidth={1.8} />
+                <span>Search</span>
+              </button>
             </nav>
           </div>
 
@@ -134,14 +141,6 @@ export default function Navbar({ onOpenAi }: { onOpenAi: () => void }) {
               onClick={toggleSearch}
               className="mobile-search-btn"
               style={{ background: "none", border: "none", cursor: "pointer", padding: "8px", display: "flex", alignItems: "center", color: "#1a1a1a" }}
-            >
-              <Search size={20} strokeWidth={1.8} />
-            </button>
-            <button
-              aria-label="Open search"
-              onClick={toggleSearch}
-              className="desktop-search-btn"
-              style={{ background: "none", border: "none", cursor: "pointer", padding: "8px", display: "none", alignItems: "center", color: "#1a1a1a" }}
             >
               <Search size={20} strokeWidth={1.8} />
             </button>

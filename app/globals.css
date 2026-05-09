@@ -108,19 +108,14 @@ body {
     align-items: center;
   }
 
-  .desktop-search-btn {
-    display: flex !important;
-    align-items: center !important;
-  }
-
   .mobile-search-btn {
     display: none !important;
   }
 
   /* Desktop Search Overlay — compact dropdown */
   .search-overlay-desktop {
-    left: auto !important;
-    right: 24px !important;
+    left: calc(50% - 240px) !important;
+    right: auto !important;
     bottom: auto !important;
     width: 480px !important;
     max-height: 620px !important;
@@ -128,6 +123,7 @@ body {
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.14) !important;
     border: 1px solid #e5e7eb !important;
     overflow: hidden !important;
+    margin-top: 12px;
   }
 
   .search-results-body {
