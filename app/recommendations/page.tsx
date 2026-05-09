@@ -1,16 +1,13 @@
 "use client";
 
-import { X, Check, ChevronDown } from "lucide-react";
+import { Check, ChevronDown, ArrowLeft } from "lucide-react";
 import React, { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { API_BASE } from "@/lib/api/config";
 import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import type { E164Number } from "libphonenumber-js/core";
-
-interface RecommendationsOverlayProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
+import Link from "next/link";
 
 interface CustomDropdownProps {
   label: string;
@@ -235,7 +232,8 @@ const inputStyle = {
   transition: "border-color 0.2s",
 };
 
-export default function RecommendationsOverlay({ isOpen, onClose }: RecommendationsOverlayProps) {
+export default function RecommendationsPage() {
+  const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [goal, setGoal] = useState("");
@@ -292,277 +290,210 @@ export default function RecommendationsOverlay({ isOpen, onClose }: Recommendati
   const canSubmit = name.trim() && email.trim() && !isLoading;
 
   return (
-    <>
-      {/* Backdrop */}
+    <main style={{ backgroundColor: "#ffffff", minHeight: "100vh", paddingBottom: "60px" }}>
+      {/* Header */}
       <div
-        onClick={onClose}
-        className="recs-overlay-backdrop"
         style={{
-          position: "fixed",
-          inset: 0,
-          backgroundColor: "rgba(0,0,0,0.4)",
-          zIndex: 300,
-          opacity: isOpen ? 1 : 0,
-          pointerEvents: isOpen ? "auto" : "none",
-          transition: "opacity 0.3s ease",
-        }}
-      />
-
-      {/* Slide-in Panel */}
-      <div
-        className="recs-overlay-panel"
-        style={{
-          position: "fixed",
-          top: 0,
-          right: 0,
-          bottom: 0,
-          width: "100%",
-          maxWidth: "min(100%, 20vw)",
-          backgroundColor: "#ffffff",
-          zIndex: 301,
-          transform: isOpen ? "translateX(0)" : "translateX(100%)",
-          transition: "transform 0.4s cubic-bezier(0.32, 0.72, 0, 1)",
           display: "flex",
-          flexDirection: "column",
-          boxShadow: "-4px 0 20px rgba(0,0,0,0.1)",
+          alignItems: "center",
+          padding: "16px 20px",
+          borderBottom: "1px solid #f0f0f0",
+          backgroundColor: "#ffffff",
+          position: "sticky",
+          top: 0,
+          zIndex: 100,
         }}
       >
-        {/* Header */}
-        <div
+        <button
+          onClick={() => router.back()}
+          aria-label="Go back"
           style={{
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            padding: "8px",
             display: "flex",
             alignItems: "center",
-            padding: "16px",
-            borderBottom: "1px solid #f0f0f0",
-            flexShrink: 0,
+            color: "#1a1a1a",
           }}
         >
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onClose();
-            }}
-            aria-label="Close"
-            type="button"
-            style={{
-              backgroundColor: "transparent",
-              border: "none",
-              cursor: "pointer",
-              padding: "8px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#1a1a1a",
-              position: "relative",
-              zIndex: 10,
-            }}
-          >
-            <X size={24} strokeWidth={2} />
-          </button>
-          <h2 style={{ fontSize: "18px", fontWeight: 700, color: "#1a1a1a", margin: "0 0 0 8px" }}>
-            Personalized Recommendations
-          </h2>
-        </div>
+          <ArrowLeft size={24} />
+        </button>
+        <h1 style={{ fontSize: "18px", fontWeight: 700, color: "#1a1a1a", margin: "0 0 0 12px" }}>
+          Personalized Recommendations
+        </h1>
+      </div>
 
-        {/* Content Area */}
-        <div style={{ flex: 1, padding: "24px", overflowY: "auto" }}>
-          {submitted ? (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "16px", height: "100%", textAlign: "center" }}>
-              <div
-                style={{
-                  width: "64px",
-                  height: "64px",
-                  borderRadius: "50%",
-                  backgroundColor: "#FDFBF7",
-                  border: "2px solid #C9A84C",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Check size={32} color="#C9A84C" strokeWidth={2.5} />
-              </div>
-              <h1 style={{ fontSize: "20px", fontWeight: 700, color: "#1a1a1a", margin: 0 }}>
+      <div style={{ maxWidth: "600px", margin: "0 auto", padding: "32px 20px" }}>
+        {submitted ? (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "24px", textAlign: "center", padding: "40px 0" }}>
+            <div
+              style={{
+                width: "80px",
+                height: "80px",
+                borderRadius: "50%",
+                backgroundColor: "#FDFBF7",
+                border: "2px solid #C9A84C",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Check size={40} color="#C9A84C" strokeWidth={2.5} />
+            </div>
+            <div>
+              <h2 style={{ fontSize: "24px", fontWeight: 700, color: "#1a1a1a", marginBottom: "12px" }}>
                 You&apos;re all set!
-              </h1>
-              <p style={{ fontSize: "15px", color: "#6B7280", lineHeight: 1.6, margin: 0 }}>
+              </h2>
+              <p style={{ fontSize: "16px", color: "#6B7280", lineHeight: 1.6 }}>
                 We&apos;ll curate personalized project recommendations and reach out to you shortly.
               </p>
-              <button
-                onClick={onClose}
-                type="button"
-                style={{
-                  marginTop: "16px",
-                  padding: "14px 32px",
-                  backgroundColor: "#C9A84C",
-                  color: "#ffffff",
-                  border: "none",
-                  borderRadius: "14px",
-                  fontSize: "15px",
-                  fontWeight: 700,
-                  cursor: "pointer",
-                }}
-              >
-                Close
-              </button>
             </div>
-          ) : (
-            <>
-              <h1
-                style={{
-                  fontSize: "20px",
-                  fontWeight: 600,
-                  color: "#1a1a1a",
-                  lineHeight: 1.4,
-                  marginBottom: "24px",
-                }}
-              >
-                Get AI-curated project recommendations based on your goals.
-              </h1>
+            <Link
+              href="/"
+              style={{
+                marginTop: "16px",
+                padding: "14px 40px",
+                backgroundColor: "#C9A84C",
+                color: "#ffffff",
+                border: "none",
+                borderRadius: "14px",
+                fontSize: "16px",
+                fontWeight: 700,
+                textDecoration: "none",
+              }}
+            >
+              Back to Home
+            </Link>
+          </div>
+        ) : (
+          <>
+            <h2
+              style={{
+                fontSize: "28px",
+                fontWeight: 800,
+                color: "#1a1a1a",
+                lineHeight: 1.2,
+                marginBottom: "24px",
+                letterSpacing: "-0.02em",
+              }}
+            >
+              Get AI-curated project recommendations based on your goals.
+            </h2>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginBottom: "32px" }}>
-                {features.map((feature, index) => (
-                  <div key={index} style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
-                    <div style={{ marginTop: "2px" }}>
-                      <Check size={18} strokeWidth={2.5} color="#C9A84C" />
-                    </div>
-                    <p style={{ fontSize: "14px", color: "#1a1a1a", lineHeight: 1.5, margin: 0, fontWeight: 500 }}>
-                      {feature}
-                    </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginBottom: "40px" }}>
+              {features.map((feature, index) => (
+                <div key={index} style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
+                  <div style={{ marginTop: "4px" }}>
+                    <Check size={20} strokeWidth={3} color="#C9A84C" />
                   </div>
-                ))}
-              </div>
-
-              {/* Form */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-                {/* Name */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                  <label style={{ fontSize: "14px", fontWeight: 700, color: "#1a1a1a" }}>Name *</label>
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="John Doe"
-                    style={inputStyle}
-                  />
-                </div>
-
-                {/* Email */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                  <label style={{ fontSize: "14px", fontWeight: 700, color: "#1a1a1a" }}>Email *</label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="john@example.com"
-                    style={inputStyle}
-                  />
-                </div>
-
-                {/* WhatsApp Number */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                  <label style={{ fontSize: "14px", fontWeight: 700, color: "#1a1a1a" }}>WhatsApp Number</label>
-                  <PhoneInput
-                    international
-                    defaultCountry="AE"
-                    value={phone}
-                    onChange={setPhone}
-                    className="recs-phone-input"
-                    countrySelectComponent={CountrySelect}
-                  />
-                </div>
-
-                <CustomDropdown
-                  label="Budget Range (AED)"
-                  value={budget}
-                  options={["1M-2M AED", "2M-3M AED", "3M-5M AED", "5M+ AED"]}
-                  onChange={setBudget}
-                />
-
-                <CustomDropdown
-                  label="Investment Timeline"
-                  value={timeline}
-                  options={["3 months", "6 months", "12 months", "2+ years"]}
-                  onChange={setTimeline}
-                />
-
-                {/* Preferred Area */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                  <label style={{ fontSize: "14px", fontWeight: 700, color: "#1a1a1a" }}>Preferred Area</label>
-                  <input
-                    type="text"
-                    value={preferredArea}
-                    onChange={(e) => setPreferredArea(e.target.value)}
-                    placeholder="e.g. Dubai Hills, Downtown"
-                    style={inputStyle}
-                  />
-                </div>
-
-                <CustomDropdown
-                  label="Investment Goal"
-                  value={goal}
-                  options={["Long-term rental appreciation", "Capital growth", "Secondary home", "High ROI"]}
-                  onChange={setGoal}
-                />
-
-                {submitError && (
-                  <p style={{ fontSize: "13px", color: "#DC2626", margin: 0, padding: "10px 14px", backgroundColor: "#FEF2F2", borderRadius: "8px" }}>
-                    {submitError}
+                  <p style={{ fontSize: "15px", color: "#1a1a1a", lineHeight: 1.5, margin: 0, fontWeight: 500 }}>
+                    {feature}
                   </p>
-                )}
-
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "8px" }}>
-                  <button
-                    onClick={handleSubmit}
-                    type="button"
-                    disabled={!canSubmit}
-                    style={{
-                      padding: "16px",
-                      backgroundColor: canSubmit ? "#C9A84C" : "#E5E7EB",
-                      color: canSubmit ? "#ffffff" : "#9CA3AF",
-                      border: "none",
-                      borderRadius: "14px",
-                      fontSize: "16px",
-                      fontWeight: 700,
-                      cursor: canSubmit ? "pointer" : "not-allowed",
-                      transition: "transform 0.1s, opacity 0.2s",
-                      boxShadow: canSubmit ? "0 4px 12px rgba(201, 168, 76, 0.2)" : "none",
-                      width: "100%",
-                    }}
-                  >
-                    {isLoading ? "Submitting..." : "Get Recommendations"}
-                  </button>
-
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onClose();
-                    }}
-                    type="button"
-                    style={{
-                      background: "none",
-                      border: "none",
-                      color: "#1a1a1a",
-                      fontSize: "14px",
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      padding: "12px",
-                      textAlign: "center",
-                      width: "100%",
-                      opacity: 0.7,
-                      display: "block",
-                      margin: "0 auto",
-                    }}
-                  >
-                    Not now
-                  </button>
                 </div>
+              ))}
+            </div>
+
+            {/* Form */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <label style={{ fontSize: "14px", fontWeight: 700, color: "#1a1a1a" }}>Name *</label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="John Doe"
+                  style={inputStyle}
+                />
               </div>
-              <div style={{ height: "40px" }} />
-            </>
-          )}
-        </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <label style={{ fontSize: "14px", fontWeight: 700, color: "#1a1a1a" }}>Email *</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="john@example.com"
+                  style={inputStyle}
+                />
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <label style={{ fontSize: "14px", fontWeight: 700, color: "#1a1a1a" }}>WhatsApp Number</label>
+                <PhoneInput
+                  international
+                  defaultCountry="AE"
+                  value={phone}
+                  onChange={setPhone}
+                  className="recs-phone-input"
+                  countrySelectComponent={CountrySelect}
+                />
+              </div>
+
+              <CustomDropdown
+                label="Budget Range (AED)"
+                value={budget}
+                options={["1M-2M AED", "2M-3M AED", "3M-5M AED", "5M+ AED"]}
+                onChange={setBudget}
+              />
+
+              <CustomDropdown
+                label="Investment Timeline"
+                value={timeline}
+                options={["3 months", "6 months", "12 months", "2+ years"]}
+                onChange={setTimeline}
+              />
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <label style={{ fontSize: "14px", fontWeight: 700, color: "#1a1a1a" }}>Preferred Area</label>
+                <input
+                  type="text"
+                  value={preferredArea}
+                  onChange={(e) => setPreferredArea(e.target.value)}
+                  placeholder="e.g. Dubai Hills, Downtown"
+                  style={inputStyle}
+                />
+              </div>
+
+              <CustomDropdown
+                label="Investment Goal"
+                value={goal}
+                options={["Long-term rental appreciation", "Capital growth", "Secondary home", "High ROI"]}
+                onChange={setGoal}
+              />
+
+              {submitError && (
+                <p style={{ fontSize: "14px", color: "#DC2626", margin: 0, padding: "12px 16px", backgroundColor: "#FEF2F2", borderRadius: "10px", border: "1px solid #FEE2E2" }}>
+                  {submitError}
+                </p>
+              )}
+
+              <div style={{ marginTop: "12px" }}>
+                <button
+                  onClick={handleSubmit}
+                  type="button"
+                  disabled={!canSubmit}
+                  style={{
+                    padding: "18px",
+                    backgroundColor: canSubmit ? "#C9A84C" : "#E5E7EB",
+                    color: canSubmit ? "#ffffff" : "#9CA3AF",
+                    border: "none",
+                    borderRadius: "16px",
+                    fontSize: "16px",
+                    fontWeight: 700,
+                    cursor: canSubmit ? "pointer" : "not-allowed",
+                    width: "100%",
+                    boxShadow: canSubmit ? "0 4px 20px rgba(201, 168, 76, 0.25)" : "none",
+                    transition: "all 0.2s",
+                  }}
+                >
+                  {isLoading ? "Submitting..." : "Get My Recommendations"}
+                </button>
+              </div>
+            </div>
+          </>
+        )}
       </div>
-    </>
+    </main>
   );
 }

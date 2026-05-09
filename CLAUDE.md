@@ -30,15 +30,14 @@ Single-page app at `app/page.tsx` — one article view for Dubai South off-plan 
 
 **Responsive strategy:** `isDesktop` state (`window.innerWidth >= 1024`) in `page.tsx` drives conditional class names. Mobile = overlays slide up; desktop = overlays dock as side panels via `.is-desktop-docked` CSS class.
 
-**State managed in `page.tsx`:**
+State managed in `page.tsx`:
 - `isAiOpen` / `aiMessage` — controls `ChatOverlay`
-- `isRecsOpen` — controls `RecommendationsOverlay`
 - `handleOpenAi(message)` — passed down as prop to trigger AI chat with optional pre-filled message
 
-**Component structure** (`app/components/`):
+Component structure (`app/components/`):
 - `Navbar` — search (via `SearchOverlay`) + hamburger (via `Sidebar`) + desktop nav tabs
 - `ChatOverlay` — AI chat panel; mock responses only; accepts `isForcedOpen` for desktop docked mode
-- `RecommendationsOverlay` — personalised property recommendations panel
+- `PersonalisedRecommendations` — links to `/recommendations` dedicated page
 - `AiBar` — floating bottom bar (mobile) to open chat
 - `ArticleSection1`–`ArticleSection7` — static article content sections
 - All components are `"use client"` — no server components in use

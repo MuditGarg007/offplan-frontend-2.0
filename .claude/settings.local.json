@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\Mudit Garg\\\\Desktop\\\\offplan\\\\mobile\" | Where-Object { $_.Name -ne 'node_modules' } | Select-Object Name, Attributes)"
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\Mudit Garg\\\\Desktop\\\\offplan\\\\mobile\" | Where-Object { $_.Name -ne 'node_modules' } | Select-Object Name, Attributes)",
+      "Bash(node -e \"const { createAuthClient } = require\\('better-auth/react'\\); const c = createAuthClient\\({ baseURL: 'http://localhost:3000' }\\); console.log\\(Object.keys\\(c\\)\\)\")"
     ]
   }
 }

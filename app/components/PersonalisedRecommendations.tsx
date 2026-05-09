@@ -1,8 +1,6 @@
-interface PersonalisedRecommendationsProps {
-  onOpenRecs: () => void;
-}
+import Link from "next/link";
 
-export default function PersonalisedRecommendations({ onOpenRecs }: PersonalisedRecommendationsProps) {
+export default function PersonalisedRecommendations() {
   return (
     <section style={{ padding: "0 20px 24px" }}>
       <div
@@ -34,23 +32,25 @@ export default function PersonalisedRecommendations({ onOpenRecs }: Personalised
         >
           Tell us your goals and our AI will suggest the best projects for you.
         </p>
-        <button
-          onClick={onOpenRecs}
+        <Link
+          href="/recommendations"
           style={{
+            display: "block",
             width: "100%",
             padding: "12px",
             backgroundColor: "#C9A84C",
-            border: "none",
             borderRadius: "8px",
             fontSize: "13px",
             fontWeight: 600,
             color: "#ffffff",
-            cursor: "pointer",
+            textAlign: "center",
+            textDecoration: "none",
             letterSpacing: "0.01em",
+            boxSizing: "border-box",
           }}
         >
           Get My Recommendations
-        </button>
+        </Link>
       </div>
     </section>
   );

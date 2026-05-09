@@ -212,12 +212,12 @@ const res = await fetch('/ask/stream', {
 
 ---
 
-## Test with curl
+## Test with curlh
 
 ```bash
 curl -N -X POST http://localhost:8000/ask/stream \
   -H "Content-Type: application/json" \
-  -d '{"query":"What are off-plan properties in Dubai?","language":"en"}' 
+  -d '{"query":"What are off-plan properties in Dubai?","language":"en"}' N
 ```
 
 Each line should appear separately and be valid JSON. Pipe to `| python -m json.tool` to validate line-by-line.
