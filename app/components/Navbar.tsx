@@ -10,36 +10,31 @@ import {
   Building2,
   BookOpenText,
   Scale,
+  Home,
 } from "lucide-react";
-import SearchOverlay from "./SearchOverlay";
 import { useAuth } from "@/components/auth-provider";
 
 const navItems = [
-  { icon: ChartNoAxesColumnIncreasing, label: "Market" },
-  { icon: MapPin, label: "Areas" },
-  { icon: Building2, label: "Developers" },
-  { icon: BookOpenText, label: "Guides" },
-  { icon: Scale, label: "Compare" },
+  { icon: Home, label: "Home", path: "/" },
+  { icon: ChartNoAxesColumnIncreasing, label: "Market", path: "/market" },
+  { icon: MapPin, label: "Areas", path: "/areas" },
+  { icon: Building2, label: "Developers", path: "/developers" },
+  { icon: BookOpenText, label: "Guides", path: "/guides" },
+  { icon: Scale, label: "Compare", path: "/compare" },
 ];
 
 export default function Navbar({ onOpenAi }: { onOpenAi: () => void }) {
   const router = useRouter();
   const { isAuthenticated, logout } = useAuth();
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const headerRef = useRef<HTMLElement>(null);
-
-  const toggleSearch = useCallback(() => setSearchOpen((prev) => !prev), []);
-  const closeSearch = useCallback(() => {
-    setSearchOpen(false);
-    setSearchQuery("");
-  }, []);
+  const handleSearchClick = useCallback(() => {
+    router.push("/search");
+  }, [router]);
 
   const handleLogout = useCallback(() => {
     logout();
     router.push("/");
   }, [logout, router]);
-
+  const headerRef = useRef<HTMLElement>(null);
   const navbarHeight = headerRef.current?.offsetHeight ?? 100;
 
   return (
@@ -100,17 +95,18 @@ export default function Navbar({ onOpenAi }: { onOpenAi: () => void }) {
           {/* Desktop Nav Items (Centered) */}
           <div className="navbar-center-section">
             <nav className="desktop-nav-menu">
-              {navItems.map(({ icon: Icon, label }) => (
-                <button
+              {navItems.map(({ icon: Icon, label, path }) => (
+                <Link
                   key={label}
+                  href={path}
                   className="nav-item-desktop"
                 >
                   <Icon size={18} strokeWidth={1.8} />
                   <span>{label}</span>
-                </button>
+                </Link>
               ))}
               <button
-                onClick={toggleSearch}
+                onClick={handleSearchClick}
                 className="nav-item-desktop"
               >
                 <Search size={18} strokeWidth={1.8} />
@@ -138,7 +134,7 @@ export default function Navbar({ onOpenAi }: { onOpenAi: () => void }) {
             </div>
             <button
               aria-label="Open search"
-              onClick={toggleSearch}
+              onClick={handleSearchClick}
               className="mobile-search-btn"
               style={{ background: "none", border: "none", cursor: "pointer", padding: "8px", display: "flex", alignItems: "center", color: "#1a1a1a" }}
             >
@@ -157,9 +153,10 @@ export default function Navbar({ onOpenAi }: { onOpenAi: () => void }) {
             padding: "6px 8px 10px",
           }}
         >
-          {navItems.map(({ icon: Icon, label }) => (
-            <button
+          {navItems.map(({ icon: Icon, label, path }) => (
+            <Link
               key={label}
+              href={path}
               aria-label={label}
               style={{
                 background: "none",
@@ -171,24 +168,19 @@ export default function Navbar({ onOpenAi }: { onOpenAi: () => void }) {
                 gap: "4px",
                 color: "#4a4a4a",
                 flex: 1,
+                textDecoration: "none"
               }}
             >
               <Icon size={20} strokeWidth={1.6} />
               <span style={{ fontSize: "10px", fontWeight: 500, letterSpacing: "0.01em", lineHeight: 1 }}>
                 {label}
               </span>
-            </button>
+            </Link>
           ))}
         </nav>
       </header>
 
-      <SearchOverlay
-        isOpen={searchOpen}
-        onClose={closeSearch}
-        navbarHeight={navbarHeight}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-      />
+      {/* SearchOverlay removed in favor of /search page */}
     </>
   );
 }

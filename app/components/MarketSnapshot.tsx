@@ -40,7 +40,10 @@ const MarketSnapshot = () => {
       <h2 className="snapshot-title">Market Snapshot</h2>
       <div className="snapshot-grid">
         {stats.map((stat, index) => (
-          <div key={index} className="snapshot-card">
+          <div 
+            key={index} 
+            className="snapshot-card" 
+          >
             <div className="snapshot-icon-wrapper">
               {stat.icon}
             </div>

@@ -41,7 +41,11 @@ const InvestmentThemes = () => {
       </div>
       <div className="themes-grid">
         {themes.map((theme, index) => (
-          <div key={index} className="theme-card" style={{ backgroundImage: `url(${theme.image})` }}>
+          <div 
+            key={index} 
+            className="theme-card" 
+            style={{ backgroundImage: `url(${theme.image})` }}
+          >
             <div className="theme-card-overlay"></div>
             <div className="theme-card-content">
               <div className="theme-icon-circle">
